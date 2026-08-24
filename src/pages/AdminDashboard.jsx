@@ -437,14 +437,28 @@ export const AdminDashboard = () => {
   };
 
   const handleClearTodayTasks = async () => {
-    if (!confirm('⚠️ Are you sure you want to clear today\'s assigned tasks?')) return;
+    const choice = window.prompt(
+      "🗑️ TASK CLEANUP OPTIONS:\n\n" +
+      "Type '1' to Clear Today's Tasks (resets today's checklists)\n" +
+      "Type '2' to Purge History Older than 30 Days (frees database space)\n\n" +
+      "Enter 1 or 2:",
+      "1"
+    );
+
+    if (!choice) return;
+
     setClearing(true);
     setError('');
     try {
-      const res = await sopService.clearTodayTasks();
-      setSuccess(`🗑️ Cleared ${res.count} tasks from today's checklist.`);
+      if (choice === '2') {
+        const res = await sopService.clearOldTasks(30);
+        setSuccess(`🗑️ Successfully purged ${res.count} historical task records older than ${res.cutoffDate}! Database space freed.`);
+      } else {
+        const res = await sopService.clearTodayTasks();
+        setSuccess(`🗑️ Cleared ${res.count} tasks from today's checklist.`);
+      }
       await loadDashboard();
-      setTimeout(() => setSuccess(''), 4000);
+      setTimeout(() => setSuccess(''), 4500);
     } catch (err) {
       setError(err.message || 'Clear failed');
     } finally {

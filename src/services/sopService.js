@@ -388,6 +388,21 @@ export const sopService = {
     return { count: data?.length || 0 };
   },
 
+  async clearOldTasks(daysAgo = 30) {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - daysAgo);
+    const dateStr = cutoffDate.toISOString().split('T')[0];
+
+    const { data, error } = await supabase
+      .from('assigned_tasks')
+      .delete()
+      .lt('assigned_date', dateStr)
+      .select();
+
+    if (error) throw error;
+    return { count: data?.length || 0, cutoffDate: dateStr };
+  },
+
   async exportTasksToCSV() {
     const tasks = await sopService.getAllStaffTasks();
     if (!tasks || tasks.length === 0) throw new Error('No task records to export.');
