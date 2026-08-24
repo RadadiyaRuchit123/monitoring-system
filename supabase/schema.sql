@@ -52,17 +52,19 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE UNIQUE,
     name TEXT NOT NULL,
     email TEXT NOT NULL,
-    role TEXT NOT NULL DEFAULT 'office_staff' CHECK (role IN ('owner', 'office_staff', 'karigar', 'cashier', 'ground_staff', 'admin', 'user')),
+    role TEXT NOT NULL DEFAULT 'office_staff' CHECK (role IN ('owner', 'office_staff', 'karigar', 'cashier', 'ground_staff', 'admin', 'user', 'removed')),
     department TEXT NOT NULL DEFAULT 'general' CHECK (department IN ('general', 'kitchen', 'cashier', 'inventory', 'hygiene', 'all')),
     branch_id UUID REFERENCES public.branches(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Add new columns to profiles if running on existing DB
+-- Add new columns & update role check constraint for existing DBs
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'office_staff';
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS department TEXT NOT NULL DEFAULT 'kitchen';
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS department TEXT NOT NULL DEFAULT 'general';
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS branch_id UUID REFERENCES public.branches(id) ON DELETE SET NULL;
+ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS profiles_role_check;
+ALTER TABLE public.profiles ADD CONSTRAINT profiles_role_check CHECK (role IN ('owner', 'office_staff', 'karigar', 'cashier', 'ground_staff', 'admin', 'user', 'removed'));
 
 -- SOP Task Templates (Master SOP definitions created by Owner/Office Staff)
 CREATE TABLE IF NOT EXISTS public.task_templates (
