@@ -33,6 +33,14 @@ export const AuthProvider = ({ children }) => {
     try {
       let userProfile = await authService.getProfile(userId);
 
+      // Block removed/deactivated staff members
+      if (userProfile && userProfile.role === 'removed') {
+        await authService.signOut();
+        setUser(null);
+        setProfile(null);
+        return;
+      }
+
       // Self-healing fallback if trigger hasn't fired yet
       if (!userProfile && userEmail) {
         userProfile = await authService.createInitialProfile(userId, userEmail, userMetadata);

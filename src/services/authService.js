@@ -54,6 +54,15 @@ export const authService = {
       throw new Error(this.getFriendlyAuthErrorMessage(error.message));
     }
 
+    // Check if user profile has been removed/deactivated by Owner
+    if (data?.user) {
+      const profile = await this.getProfile(data.user.id);
+      if (profile && profile.role === 'removed') {
+        await supabase.auth.signOut();
+        throw new Error('Your account has been deactivated or removed by the restaurant owner.');
+      }
+    }
+
     return data;
   },
 

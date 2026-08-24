@@ -359,24 +359,18 @@ export const sopService = {
       await supabase.from('assigned_tasks').delete().eq('assigned_to', userId);
     }
 
-    // 2. Try physical deletion from profiles
-    let deleted = false;
+    // 2. Mark profile role as 'removed' to permanently block login and remove from team hierarchy
     if (userId) {
-      const { error: err1 } = await supabase.from('profiles').delete().eq('user_id', userId);
-      if (!err1) deleted = true;
+      await supabase
+        .from('profiles')
+        .update({ role: 'removed', updated_at: new Date().toISOString() })
+        .eq('user_id', userId);
     }
-    if (!deleted && profileId) {
-      const { error: err2 } = await supabase.from('profiles').delete().eq('id', profileId);
-      if (!err2) deleted = true;
-    }
-
-    // 3. Fallback: Soft-delete (set role to 'removed') if physical deletion was blocked by RLS
-    if (!deleted) {
-      if (userId) {
-        await supabase.from('profiles').update({ role: 'removed', updated_at: new Date().toISOString() }).eq('user_id', userId);
-      } else if (profileId) {
-        await supabase.from('profiles').update({ role: 'removed', updated_at: new Date().toISOString() }).eq('id', profileId);
-      }
+    if (profileId) {
+      await supabase
+        .from('profiles')
+        .update({ role: 'removed', updated_at: new Date().toISOString() })
+        .eq('id', profileId);
     }
 
     return true;
