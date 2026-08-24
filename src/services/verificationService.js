@@ -78,10 +78,12 @@ export const verificationService = {
       return acc;
     }, {});
 
-    const merged = tasks.map(t => ({
-      ...t,
-      staff: profileMap[t.assigned_to] || { name: 'Staff Member', role: 'karigar' },
-    }));
+    const merged = tasks
+      .filter(t => profileMap[t.assigned_to] && profileMap[t.assigned_to].role !== 'removed')
+      .map(t => ({
+        ...t,
+        staff: profileMap[t.assigned_to],
+      }));
 
     return merged.filter(t => {
       if (t.staff?.role === 'removed') return false;
@@ -277,16 +279,21 @@ export const verificationService = {
       return acc;
     }, {});
 
-    return escs.map(e => {
-      const task = taskMap[e.assigned_task_id] || {};
-      return {
-        ...e,
-        assigned_task: {
-          ...task,
-          staff: profileMap[task.assigned_to] || { name: 'Staff Member', role: 'karigar' },
-        },
-      };
-    });
+    return escs
+      .filter(e => {
+        const task = taskMap[e.assigned_task_id];
+        return task && profileMap[task.assigned_to] && profileMap[task.assigned_to].role !== 'removed';
+      })
+      .map(e => {
+        const task = taskMap[e.assigned_task_id] || {};
+        return {
+          ...e,
+          assigned_task: {
+            ...task,
+            staff: profileMap[task.assigned_to],
+          },
+        };
+      });
   },
 
   async resolveEscalation(escalationId) {

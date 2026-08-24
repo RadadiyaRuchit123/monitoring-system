@@ -154,8 +154,8 @@ const StaffCard = ({ staff = {}, rank, branchesList = [], onUpdateStaff, onDelet
           </select>
         </div>
 
-        {/* Interactive Branch Transfer & Shift Selector (Only for Karigar & Cashier) */}
-        {['karigar', 'cashier', 'ground_staff', 'user'].includes(staff.role) ? (
+        {/* Interactive Branch Transfer & Shift Selector (Karigar, Cashier, Office Staff) */}
+        {['karigar', 'cashier', 'ground_staff', 'user', 'office_staff'].includes(staff.role) ? (
           <>
             <div style={{ flex: '1 1 130px' }}>
               <div style={{ fontSize: '10px', color: '#64748b', fontWeight: '800', marginBottom: '2px', textTransform: 'uppercase' }}>📍 ASSIGNED BRANCH</div>
@@ -168,7 +168,7 @@ const StaffCard = ({ staff = {}, rank, branchesList = [], onUpdateStaff, onDelet
                   cursor: 'pointer', outline: 'none', boxSizing: 'border-box',
                 }}
               >
-                <option value="">Default Branch</option>
+                <option value="">-- Select Branch --</option>
                 {branchesList.map(b => (
                   <option key={b.id} value={b.id}>{b.name}</option>
                 ))}

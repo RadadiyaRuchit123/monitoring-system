@@ -140,7 +140,7 @@ export const sopService = {
       .from('assigned_tasks')
       .select(`
         *,
-        staff:assigned_to (name, email, role),
+        staff:assigned_to (id, name, email, role, branch_id, shift, branches(id, name, location)),
         task_templates (
           id, title, description, frequency,
           assigned_role, verifier_role, requires_evidence, deadline_time, position
@@ -430,6 +430,7 @@ export const sopService = {
     if (!tasks || tasks.length === 0) throw new Error('No task records found for selected date range.');
 
     const headers = [
+      'Branch Name',
       'Task Title',
       'Assigned To',
       'Role',
@@ -443,6 +444,7 @@ export const sopService = {
     ];
 
     const rows = tasks.map(t => {
+      const branchName = t.staff?.branches?.name || 'Main Branch';
       const completionTime = t.completed_at
         ? new Date(t.completed_at).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'medium' })
         : (t.status === 'completed' && t.submitted_at
@@ -459,6 +461,7 @@ export const sopService = {
         : 'Pending Verification';
 
       return [
+        `"${branchName.replace(/"/g, '""')}"`,
         `"${(t.task_templates?.title || 'SOP Task').replace(/"/g, '""')}"`,
         `"${(t.staff?.name || 'Staff Member').replace(/"/g, '""')}"`,
         `"${(t.staff?.role || 'karigar').replace(/"/g, '""')}"`,

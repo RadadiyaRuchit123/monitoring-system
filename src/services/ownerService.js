@@ -48,7 +48,7 @@ export const ownerService = {
         const userIds = [...new Set(sopData.map(t => t.assigned_to))];
         const { data: profiles } = await supabase
           .from('profiles')
-          .select('id, user_id, name, email, role')
+          .select('id, user_id, name, email, role, branch_id, shift, branches(id, name, location)')
           .neq('role', 'removed')
           .in('user_id', userIds);
 
@@ -57,10 +57,12 @@ export const ownerService = {
           return acc;
         }, {});
 
-        const merged = sopData.map(t => ({
-          ...t,
-          staff: profileMap[t.assigned_to] || { name: 'Staff Member', role: 'karigar' },
-        }));
+        const merged = sopData
+          .filter(t => profileMap[t.assigned_to])
+          .map(t => ({
+            ...t,
+            staff: profileMap[t.assigned_to],
+          }));
 
         return { hasSopData: true, tasks: merged };
       }

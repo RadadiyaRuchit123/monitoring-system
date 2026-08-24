@@ -117,7 +117,12 @@ export const Signup = () => {
     setError('');
 
     try {
-      await signup(email.trim(), password, name.trim(), role, 'kitchen', selectedBranch, selectedShift);
+      let finalBranchId = selectedBranch;
+      const matchedBranch = branches.find(b => b.id === selectedBranch || b.name === selectedBranch);
+      if (matchedBranch) {
+        finalBranchId = matchedBranch.id;
+      }
+      await signup(email.trim(), password, name.trim(), role, 'kitchen', finalBranchId, selectedShift);
       navigate('/dashboard');
     } catch (err) {
       setError(err.message || 'Signup failed. Please try again.');
@@ -302,8 +307,8 @@ export const Signup = () => {
               </div>
             </div>
 
-            {/* Branch & Shift Selection (Karigar / Cashier only) */}
-            {['karigar', 'cashier'].includes(role) && (
+            {/* Branch & Shift Selection (Karigar / Cashier / Office Staff) */}
+            {['karigar', 'cashier', 'office_staff'].includes(role) && (
               <>
                 {/* Branch */}
                 <div>

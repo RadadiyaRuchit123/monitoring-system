@@ -93,7 +93,21 @@ export const authService = {
     if (!role) {
       throw new Error('Role selection is mandatory for profile creation.');
     }
-    const branch_id = metadata.branch_id || null;
+
+    let validBranchId = metadata.branch_id || null;
+
+    // Check if branch_id is a legacy placeholder (e.g. 'b1', 'b2') and resolve to actual DB UUID
+    const isUuid = validBranchId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(validBranchId);
+    if (validBranchId && !isUuid) {
+      const { data: dbBranches } = await supabase.from('branches').select('id, name').eq('is_active', true);
+      if (dbBranches && dbBranches.length > 0) {
+        // If placeholder 'b1', 'b2' etc, map by index or first branch
+        const idx = parseInt(validBranchId.replace('b', ''), 10) - 1;
+        validBranchId = (dbBranches[idx] || dbBranches[0]).id;
+      } else {
+        validBranchId = null;
+      }
+    }
 
     const profileData = {
       user_id: userId,
@@ -103,7 +117,7 @@ export const authService = {
       shift: metadata.shift || 'day',
       updated_at: new Date().toISOString(),
     };
-    if (branch_id) profileData.branch_id = branch_id;
+    if (validBranchId) profileData.branch_id = validBranchId;
 
     const { data, error } = await supabase
       .from('profiles')
