@@ -270,6 +270,7 @@ export const Dashboard = () => {
   const [updating, setUpdating] = useState(null);
   const [frequency, setFrequency] = useState('daily');
   const [pendingStatusChange, setPendingStatusChange] = useState(null);
+  const [statusFilter, setStatusFilter] = useState('all');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -352,6 +353,14 @@ export const Dashboard = () => {
   }, { total: 0, completed: 0, pending: 0, partial: 0, not_completed: 0, not_applicable: 0 });
   const eligible = stats.total - (stats.not_applicable || 0);
   const compliance = eligible === 0 ? 100 : Math.round((stats.completed / eligible) * 100);
+
+  const filteredTasks = tasks.filter(t => {
+    if (statusFilter === 'all') return true;
+    if (statusFilter === 'pending') return t.status === 'pending';
+    if (statusFilter === 'completed') return t.status === 'completed';
+    if (statusFilter === 'issues') return ['partial', 'not_completed'].includes(t.status);
+    return true;
+  });
 
   const roleName = profile?.role === 'cashier' ? '💰 Cashier' : profile?.role === 'office_staff' ? '📋 Office Staff' : profile?.role === 'owner' ? '👑 Owner' : profile?.role === 'karigar' ? '🍳 Karigar' : (profile?.role || 'Staff');
 
@@ -487,6 +496,33 @@ export const Dashboard = () => {
           })}
         </div>
 
+        {/* Status Filter Pills */}
+        {!loading && tasks.length > 0 && (
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', overflowX: 'auto', paddingBottom: '4px' }}>
+            {[
+              { id: 'all', label: `All (${stats.total})` },
+              { id: 'pending', label: `⏳ Pending (${stats.pending || 0})` },
+              { id: 'completed', label: `✅ Done (${stats.completed || 0})` },
+              { id: 'issues', label: `⚠️ Issues (${(stats.partial || 0) + (stats.not_completed || 0)})` },
+            ].map(f => (
+              <button
+                key={f.id}
+                onClick={() => setStatusFilter(f.id)}
+                style={{
+                  padding: '6px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: '700',
+                  border: `1px solid ${statusFilter === f.id ? '#2563eb' : '#cbd5e1'}`,
+                  background: statusFilter === f.id ? '#eff6ff' : '#ffffff',
+                  color: statusFilter === f.id ? '#2563eb' : '#475569',
+                  cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.15s',
+                  boxShadow: statusFilter === f.id ? '0 2px 8px rgba(37,99,235,0.15)' : 'none',
+                }}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Task List */}
         {loading ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}>
@@ -515,9 +551,13 @@ export const Dashboard = () => {
               <FaRotate size={12} /> Refresh Checklist
             </button>
           </div>
+        ) : filteredTasks.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '30px 20px', background: '#ffffff', borderRadius: '16px', color: '#64748b', fontSize: '13px', border: '1px solid #e2e8f0' }}>
+            No tasks found under "{statusFilter}" filter.
+          </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {tasks.map(task => (
+            {filteredTasks.map(task => (
               <TaskCard
                 key={task.id}
                 task={task}

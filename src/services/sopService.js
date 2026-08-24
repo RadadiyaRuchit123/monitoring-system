@@ -195,18 +195,7 @@ export const sopService = {
   async syncTasksForToday(frequency = 'daily') {
     const today = new Date().toISOString().split('T')[0];
 
-    // 1. Try SQL RPC first
-    try {
-      const { data, error } = await supabase
-        .rpc('sync_sop_tasks_for_today', { p_frequency: frequency });
-      if (!error && typeof data === 'number' && data > 0) {
-        return data;
-      }
-    } catch (err) {
-      console.warn('RPC sync failed, falling back to JS sync:', err);
-    }
-
-    // 2. Fallback JS Sync: Fetch active templates & staff profiles
+    // 1. Perform clean JS-based Task Sync (avoids 400 Bad Request console errors)
     const { data: templates } = await supabase
       .from('task_templates')
       .select('*')
@@ -452,14 +441,21 @@ export const sopService = {
 
   async loadSampleSOPTemplates() {
     const samples = [
-      { title: 'Kitchen Opening Check', description: 'Inspect equipment, gas, water, power. Clean surfaces.', frequency: 'daily', assigned_role: 'karigar', verifier_role: 'office_staff', deadline_time: '08:30 AM', position: 1 },
-      { title: 'Preheat Tandoor & Fryers', description: 'Preheat tandoor, check fryer oil quality.', frequency: 'daily', assigned_role: 'karigar', verifier_role: 'office_staff', deadline_time: '09:00 AM', position: 2 },
-      { title: 'Chutney & Sauce Preparation', description: 'Prepare green chutney, tamarind chutney, raita.', frequency: 'daily', assigned_role: 'karigar', verifier_role: 'office_staff', deadline_time: '09:30 AM', position: 3 },
-      { title: 'Papaya & Dough Prep', description: 'Prepare papaya marination and knead dough.', frequency: 'daily', assigned_role: 'karigar', verifier_role: 'office_staff', deadline_time: '09:30 AM', position: 4 },
-      { title: 'Cash Counter Float Count', description: 'Count opening cash float. Sign float register.', frequency: 'daily', assigned_role: 'cashier', verifier_role: 'office_staff', deadline_time: '09:00 AM', position: 1 },
-      { title: 'Test POS & Card Machine', description: 'Test POS printer & card swipe machine.', frequency: 'daily', assigned_role: 'cashier', verifier_role: 'office_staff', deadline_time: '09:15 AM', position: 2 },
-      { title: 'Daily Sales Entry', description: 'Match KOT bills with POS totals.', frequency: 'daily', assigned_role: 'cashier', verifier_role: 'office_staff', deadline_time: '03:00 PM', position: 3 },
-      { title: 'Cash Closing & Handover', description: 'Count closing cash. Handover to Office Staff.', frequency: 'daily', assigned_role: 'cashier', verifier_role: 'office_staff', deadline_time: '10:00 PM', position: 4 },
+      // Kitchen SOPs (Karigar)
+      { title: 'Kitchen Opening & Gas Check', description: 'Inspect gas pipeline, water valves, exhaust switches, and surface hygiene.', frequency: 'daily', assigned_role: 'karigar', verifier_role: 'office_staff', deadline_time: '08:30 AM', position: 1 },
+      { title: 'Preheat Tandoor & Fryer Oil Quality', description: 'Preheat tandoor, check fryer oil TPM level and filter clarity.', frequency: 'daily', assigned_role: 'karigar', verifier_role: 'office_staff', deadline_time: '09:00 AM', position: 2 },
+      { title: 'Chutney & Sauce Preparation', description: 'Prepare fresh mint-coriander chutney, tamarind chutney, and garlic paste.', frequency: 'daily', assigned_role: 'karigar', verifier_role: 'office_staff', deadline_time: '09:30 AM', position: 3 },
+      { title: 'Dough Kneading & Marination Prep', description: 'Knead fresh naan dough and marinate paneer/tikka batches.', frequency: 'daily', assigned_role: 'karigar', verifier_role: 'office_staff', deadline_time: '10:00 AM', position: 4 },
+      { title: 'Refrigeration & Deep Freezer Temp Log', description: 'Log temperatures: Chiller (2°C-5°C) and Deep Freezer (-18°C).', frequency: 'daily', assigned_role: 'karigar', verifier_role: 'office_staff', deadline_time: '11:00 AM', position: 5 },
+      { title: 'Kitchen Exhaust & Hood Cleaning', description: 'Degrease exhaust hood filters and wipe stainless steel walls.', frequency: 'daily', assigned_role: 'karigar', verifier_role: 'office_staff', deadline_time: '04:00 PM', position: 6 },
+      { title: 'Night Kitchen Deep Clean & Gas Shutoff', description: 'Sanitize all cooking stations, turn off main gas valves and log waste.', frequency: 'daily', assigned_role: 'karigar', verifier_role: 'office_staff', deadline_time: '10:30 PM', position: 7 },
+
+      // Cashier & Counter SOPs
+      { title: 'Cash Counter Opening Float Count', description: 'Count physical opening float currency notes & sign opening register.', frequency: 'daily', assigned_role: 'cashier', verifier_role: 'office_staff', deadline_time: '09:00 AM', position: 1 },
+      { title: 'POS Printer & EDC Machine Test', description: 'Check thermal paper roll status, run test print & verify EDC network.', frequency: 'daily', assigned_role: 'cashier', verifier_role: 'office_staff', deadline_time: '09:15 AM', position: 2 },
+      { title: 'Mid-Day Sales & KOT Reconciliation', description: 'Verify digital QR payments, Zomato/Swiggy order logs & cash in drawer.', frequency: 'daily', assigned_role: 'cashier', verifier_role: 'office_staff', deadline_time: '03:00 PM', position: 3 },
+      { title: 'Bill Counter Sanitization & Menu Check', description: 'Disinfect bill counter, wipe touchscreens & verify physical menu cards.', frequency: 'daily', assigned_role: 'cashier', verifier_role: 'office_staff', deadline_time: '05:00 PM', position: 4 },
+      { title: 'Night Cash Closing & Office Handover', description: 'Generate Z-Report from POS, count final cash & deposit in safe box.', frequency: 'daily', assigned_role: 'cashier', verifier_role: 'office_staff', deadline_time: '10:15 PM', position: 5 },
     ];
     return await sopService.bulkCreateTemplates(samples);
   },
