@@ -586,7 +586,7 @@ export const AdminDashboard = () => {
             padding: '14px 20px', borderRadius: '16px', marginBottom: '20px',
             background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)',
             border: '1px solid #fde68a', display: 'flex', alignItems: 'center',
-            justify: 'space-between', gap: '16px', boxShadow: '0 4px 12px rgba(217,119,6,0.1)',
+            justify: 'space-between', gap: '16px', boxShadow: '0 4px 12px rgba(217,119,6,0.1)', flexWrap: 'wrap',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <Crown size={20} color="#d97706" />
@@ -616,62 +616,62 @@ export const AdminDashboard = () => {
         {/* ══════════════════ HEADER BANNER (Clean Light) ══════════════════ */}
         <div style={{
           background: 'linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%)',
-          borderRadius: '24px', padding: '24px 28px', marginBottom: '24px',
+          borderRadius: '24px', padding: '18px 20px', marginBottom: '20px',
           border: '1px solid #e2e8f0', boxShadow: '0 4px 16px rgba(0,0,0,0.04)',
           position: 'relative', overflow: 'hidden',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '20px' }}>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+            <div style={{ minWidth: '220px', flex: 1 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', flexWrap: 'wrap' }}>
                 <span style={{ padding: '3px 10px', borderRadius: '20px', background: '#fef3c7', border: '1px solid #fde68a', color: '#b45309', fontSize: '11px', fontWeight: '800', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                   <Crown size={12} color="#d97706" /> {isOwner ? 'OWNER CONTROL CENTER' : 'MANAGER PANEL'}
                 </span>
                 <span style={{ color: '#94a3b8', fontSize: '12px', fontWeight: '500' }}>• {today}</span>
               </div>
-              <div style={{ color: '#0f172a', fontSize: '26px', fontWeight: '900', letterSpacing: '-0.5px' }}>
+              <div style={{ color: '#0f172a', fontSize: 'clamp(20px, 4.5vw, 26px)', fontWeight: '900', letterSpacing: '-0.5px' }}>
                 Restaurant SOP Control Center
               </div>
-              <div style={{ color: '#64748b', fontSize: '13px', marginTop: '2px' }}>
+              <div style={{ color: '#64748b', fontSize: '12px', marginTop: '2px' }}>
                 Manage SOP checklists, staff roles & push daily tasks to team
               </div>
             </div>
 
             {/* Right: Ring + Actions */}
-            <div style={{ display: 'flex', gap: '14px', alignItems: 'center', flexWrap: 'wrap' }}>
-              {summary && <ComplianceRing pct={compliancePct} size={96} />}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <div style={{ display: 'flex', gap: '6px' }}>
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap', width: '100%', maxWidth: 'max-content' }}>
+              {summary && <ComplianceRing pct={compliancePct} size={84} />}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1, minWidth: '200px' }}>
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                   <button onClick={handleSync} disabled={syncing} style={{
-                    flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                    padding: '9px 14px', borderRadius: '10px', border: 'none',
+                    flex: 1, minWidth: '130px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                    padding: '9px 12px', borderRadius: '10px', border: 'none',
                     background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
                     color: '#ffffff', cursor: syncing ? 'default' : 'pointer', fontSize: '12px', fontWeight: '800',
-                    boxShadow: '0 4px 12px rgba(37,99,235,0.25)',
+                    boxShadow: '0 4px 12px rgba(37,99,235,0.25)', whiteSpace: 'nowrap',
                   }}>
                     <Send size={12} />
-                    {syncing ? 'Pushing...' : 'Push Tasks to Staff'}
+                    {syncing ? 'Pushing...' : 'Push Tasks'}
                   </button>
                   <button onClick={handleExportCSV} disabled={exporting} style={{
-                    display: 'flex', alignItems: 'center', gap: '5px',
-                    padding: '9px 14px', borderRadius: '10px', border: '1px solid #a7f3d0',
-                    background: '#ecfdf5', color: '#047857', cursor: exporting ? 'default' : 'pointer', fontSize: '12px', fontWeight: '800',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
+                    padding: '9px 12px', borderRadius: '10px', border: '1px solid #a7f3d0',
+                    background: '#ecfdf5', color: '#047857', cursor: exporting ? 'default' : 'pointer', fontSize: '12px', fontWeight: '800', whiteSpace: 'nowrap',
                   }}>
                     <FileSpreadsheet size={12} /> {exporting ? 'Exporting...' : 'Export CSV'}
                   </button>
                 </div>
 
-                <div style={{ display: 'flex', gap: '6px' }}>
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                   <button onClick={loadDashboard} style={{
-                    flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                    flex: 1, minWidth: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
                     padding: '8px 12px', borderRadius: '10px', border: '1px solid #cbd5e1',
-                    background: '#ffffff', color: '#475569', cursor: 'pointer', fontSize: '12px', fontWeight: '600',
+                    background: '#ffffff', color: '#475569', cursor: 'pointer', fontSize: '12px', fontWeight: '600', whiteSpace: 'nowrap',
                   }}>
-                    <RefreshCw size={11} /> Refresh Data
+                    <RefreshCw size={11} /> Refresh
                   </button>
                   <button onClick={handleClearTodayTasks} disabled={clearing} style={{
-                    display: 'flex', alignItems: 'center', gap: '5px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
                     padding: '8px 12px', borderRadius: '10px', border: '1px solid #fecaca',
-                    background: '#fef2f2', color: '#b91c1c', cursor: clearing ? 'default' : 'pointer', fontSize: '12px', fontWeight: '800',
+                    background: '#fef2f2', color: '#b91c1c', cursor: clearing ? 'default' : 'pointer', fontSize: '12px', fontWeight: '800', whiteSpace: 'nowrap',
                   }}>
                     <Trash size={11} /> {clearing ? 'Clearing...' : 'Clear Tasks'}
                   </button>
@@ -687,7 +687,7 @@ export const AdminDashboard = () => {
 
         {/* ══════════════════ NAVIGATION TABS ══════════════════ */}
         <div style={{
-          display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '24px',
+          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px', marginBottom: '20px',
         }}>
           {TABS.map(tab => {
             const active = activeTab === tab.id;
@@ -696,7 +696,7 @@ export const AdminDashboard = () => {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 style={{
-                  padding: '16px 20px', borderRadius: '16px', border: `2px solid ${active ? '#2563eb' : '#e2e8f0'}`,
+                  padding: '12px 14px', borderRadius: '16px', border: `2px solid ${active ? '#2563eb' : '#e2e8f0'}`,
                   background: active ? '#eff6ff' : '#ffffff', color: active ? '#2563eb' : '#475569',
                   textAlign: 'center', cursor: 'pointer', transition: 'all 0.15s',
                   boxShadow: active ? '0 4px 14px rgba(37,99,235,0.12)' : '0 2px 6px rgba(0,0,0,0.02)',

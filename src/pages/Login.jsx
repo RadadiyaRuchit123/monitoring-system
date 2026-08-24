@@ -37,7 +37,7 @@ export const Login = () => {
 
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-slate-50 flex flex-col justify-center p-4 sm:p-6 lg:p-8 overflow-x-hidden">
       {/* Configuration Alert if .env missing */}
       {!isConfigured && (
         <div className="max-w-md mx-auto mb-6 px-4">
@@ -64,8 +64,8 @@ export const Login = () => {
         <p className="mt-2 text-sm text-slate-500">Sign in to manage your daily checklist and time logs</p>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4">
-        <div className="bg-white py-8 px-6 sm:px-10 shadow-xl border border-slate-200/80 rounded-3xl">
+      <div className="mt-6 sm:mt-8 w-full max-w-md mx-auto">
+        <div className="bg-white py-6 px-5 sm:py-8 sm:px-10 shadow-xl border border-slate-200/80 rounded-3xl">
           {error && (
             <div className="mb-6 p-3.5 bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold rounded-xl flex items-start space-x-2">
               <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
