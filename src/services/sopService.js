@@ -16,7 +16,17 @@ export const sopService = {
       .eq('is_active', true)
       .order('created_at', { ascending: true });
     if (error) throw error;
-    return data || [];
+
+    // Filter unique branch names to prevent duplicate display
+    const seen = new Set();
+    const uniqueBranches = (data || []).filter(b => {
+      const cleanName = (b.name || '').trim();
+      if (!cleanName || seen.has(cleanName)) return false;
+      seen.add(cleanName);
+      return true;
+    });
+
+    return uniqueBranches;
   },
 
   async createBranch(branchData) {
