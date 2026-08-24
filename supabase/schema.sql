@@ -17,7 +17,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- Branches (Multi-branch support)
 CREATE TABLE IF NOT EXISTS public.branches (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name TEXT NOT NULL,
+    name TEXT NOT NULL UNIQUE,
     location TEXT,
     compliance_threshold_warning INT NOT NULL DEFAULT 75,  -- % below this → yellow alert
     compliance_threshold_critical INT NOT NULL DEFAULT 60, -- % below this → red alert
@@ -25,6 +25,10 @@ CREATE TABLE IF NOT EXISTS public.branches (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Ensure UNIQUE constraint on existing DB
+ALTER TABLE public.branches DROP CONSTRAINT IF EXISTS branches_name_key;
+ALTER TABLE public.branches ADD CONSTRAINT branches_name_key UNIQUE (name);
 
 -- Insert default 16 branches
 INSERT INTO public.branches (name, location) VALUES
@@ -43,8 +47,8 @@ INSERT INTO public.branches (name, location) VALUES
   ('Adalaj', 'Adalaj'),
   ('Makarba', 'Makarba'),
   ('Chotila', 'Chotila'),
-  ('Bliss Resort (Mehsana)', 'Mehsana')
-ON CONFLICT DO NOTHING;
+  ('Bliss Resort (Mehsana)', 'Bliss Resort')
+ON CONFLICT (name) DO NOTHING;
 
 -- Profiles Table (3-Tier: owner → office_staff → karigar/cashier)
 CREATE TABLE IF NOT EXISTS public.profiles (
