@@ -193,52 +193,54 @@ export const Header = ({ onOpenProfileModal, onError }) => {
         </div>
       </header>
 
-      {/* Floating Bottom Navigation Bar for Mobile (< 640px) */}
-      <div className="fixed bottom-3 left-3 right-3 z-40 bg-slate-900/95 backdrop-blur-xl border border-slate-800 text-white rounded-2xl p-1.5 shadow-2xl flex items-center justify-around sm:hidden">
-        <button
-          onClick={() => navigate('/dashboard')}
-          className={`flex flex-col items-center gap-1 py-1.5 px-3 rounded-xl transition-all ${
-            isOnDash ? 'bg-blue-600 text-white font-extrabold shadow-md' : 'text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          <FaClipboardList size={16} />
-          <span className="text-[10px]">Checklist</span>
-        </button>
-
-        {isOfficeStaff && (
+      {/* Floating Bottom Navigation Bar for Mobile (< 640px) - ONLY for Owner & Office Staff */}
+      {(isOwner || isOfficeStaff) && (
+        <div className="fixed bottom-3 left-3 right-3 z-40 bg-slate-900/95 backdrop-blur-xl border border-slate-800 text-white rounded-2xl p-1.5 shadow-2xl flex items-center justify-around sm:hidden">
           <button
-            onClick={() => navigate('/verify')}
+            onClick={() => navigate('/dashboard')}
             className={`flex flex-col items-center gap-1 py-1.5 px-3 rounded-xl transition-all ${
-              isOnVerify ? 'bg-purple-600 text-white font-extrabold shadow-md' : 'text-slate-400 hover:text-slate-200'
+              isOnDash ? 'bg-blue-600 text-white font-extrabold shadow-md' : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            <FaUserCheck size={16} />
-            <span className="text-[10px]">Verify</span>
+            <FaClipboardList size={16} />
+            <span className="text-[10px]">Checklist</span>
           </button>
-        )}
 
-        {isOwner && (
-          <button
-            onClick={() => navigate('/admin')}
-            className={`flex flex-col items-center gap-1 py-1.5 px-3 rounded-xl transition-all ${
-              isOnAdmin ? 'bg-amber-600 text-white font-extrabold shadow-md' : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <FaCrown size={16} />
-            <span className="text-[10px]">Control</span>
-          </button>
-        )}
+          {isOfficeStaff && (
+            <button
+              onClick={() => navigate('/verify')}
+              className={`flex flex-col items-center gap-1 py-1.5 px-3 rounded-xl transition-all ${
+                isOnVerify ? 'bg-purple-600 text-white font-extrabold shadow-md' : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <FaUserCheck size={16} />
+              <span className="text-[10px]">Verify</span>
+            </button>
+          )}
 
-        {onOpenProfileModal && (
-          <button
-            onClick={onOpenProfileModal}
-            className="flex flex-col items-center gap-1 py-1.5 px-3 rounded-xl text-slate-400 hover:text-slate-200 transition-all"
-          >
-            <FaUserGear size={16} />
-            <span className="text-[10px]">Profile</span>
-          </button>
-        )}
-      </div>
+          {isOwner && (
+            <button
+              onClick={() => navigate('/admin')}
+              className={`flex flex-col items-center gap-1 py-1.5 px-3 rounded-xl transition-all ${
+                isOnAdmin ? 'bg-amber-600 text-white font-extrabold shadow-md' : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <FaCrown size={16} />
+              <span className="text-[10px]">Control</span>
+            </button>
+          )}
+
+          {onOpenProfileModal && (
+            <button
+              onClick={onOpenProfileModal}
+              className="flex flex-col items-center gap-1 py-1.5 px-3 rounded-xl text-slate-400 hover:text-slate-200 transition-all"
+            >
+              <FaUserGear size={16} />
+              <span className="text-[10px]">Profile</span>
+            </button>
+          )}
+        </div>
+      )}
     </>
   );
 };
