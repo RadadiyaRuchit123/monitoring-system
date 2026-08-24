@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { FaSquareCheck, FaCrown, FaUserGear, FaChevronDown, FaArrowRightFromBracket, FaUserCheck, FaClipboardList, FaShieldHalved } from 'react-icons/fa6';
-import { HiSparkles, HiMiniBuildingStorefront } from 'react-icons/hi2';
+import {
+  FaSquareCheck, FaCrown, FaUserGear, FaChevronDown,
+  FaArrowRightFromBracket, FaUserCheck, FaClipboardList,
+} from 'react-icons/fa6';
 
 export const Header = ({ onOpenProfileModal, onError }) => {
-  const { user, profile, logout, isOwner, isOfficeStaff, isCashier, canAccessControlPanel, userDepartment, userBranch } = useAuth();
+  const { user, profile, logout, isOwner, isOfficeStaff, isCashier, isKarigar, userBranch } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -18,196 +20,168 @@ export const Header = ({ onOpenProfileModal, onError }) => {
 
   const getRoleBadge = () => {
     if (isOwner) return (
-      <span style={{ padding: '3px 10px', background: '#fef3c7', border: '1px solid #fde68a', color: '#92400e', fontSize: '10px', fontWeight: '800', borderRadius: '20px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-        <FaCrown size={10} color="#d97706" /> OWNER
+      <span className="px-2.5 py-0.5 bg-amber-50 border border-amber-200 text-amber-800 text-[10px] font-extrabold rounded-full inline-flex items-center gap-1 shadow-2xs">
+        <FaCrown size={10} className="text-amber-600" /> OWNER
       </span>
     );
     if (isOfficeStaff) return (
-      <span style={{ padding: '3px 10px', background: '#f5f3ff', border: '1px solid #ddd6fe', color: '#6b21a8', fontSize: '10px', fontWeight: '800', borderRadius: '20px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-        <FaUserCheck size={10} color="#7c3aed" /> OFFICE STAFF
+      <span className="px-2.5 py-0.5 bg-purple-50 border border-purple-200 text-purple-800 text-[10px] font-extrabold rounded-full inline-flex items-center gap-1 shadow-2xs">
+        <FaUserCheck size={10} className="text-purple-600" /> OFFICE STAFF
       </span>
     );
     if (isCashier) return (
-      <span style={{ padding: '3px 10px', background: '#eff6ff', border: '1px solid #bfdbfe', color: '#1e40af', fontSize: '10px', fontWeight: '800', borderRadius: '20px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+      <span className="px-2.5 py-0.5 bg-blue-50 border border-blue-200 text-blue-800 text-[10px] font-extrabold rounded-full inline-flex items-center gap-1 shadow-2xs">
         💰 CASHIER
       </span>
     );
     if (isKarigar) return (
-      <span style={{ padding: '3px 10px', background: '#ecfdf5', border: '1px solid #a7f3d0', color: '#065f46', fontSize: '10px', fontWeight: '800', borderRadius: '20px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+      <span className="px-2.5 py-0.5 bg-emerald-50 border border-emerald-200 text-emerald-800 text-[10px] font-extrabold rounded-full inline-flex items-center gap-1 shadow-2xs">
         🍳 KARIGAR
       </span>
     );
     return null;
   };
 
-  const getDeptLabel = () => {
-    const labels = { kitchen: '🍳 Kitchen Operations', cashier: '💰 Cashier & Billing', inventory: '📦 Inventory Stock', hygiene: '✨ Hygiene & Cleaning', all: '🏢 All Departments', general: '⚙️ General SOPs' };
-    return labels[userDepartment] || '⚙️ Operations';
-  };
-
   const isOnAdmin = location.pathname === '/admin';
   const isOnVerify = location.pathname === '/verify';
   const isOnDash = location.pathname === '/dashboard';
 
-  const navBtnStyle = (active, activeColor = '#1e293b', activeTextColor = '#fff', defaultBg = '#f8fafc', defaultText = '#475569', border = '#cbd5e1') => ({
-    display: 'flex', alignItems: 'center', gap: '7px',
-    padding: '8px 14px', borderRadius: '10px',
-    border: `1px solid ${active ? activeColor : border}`,
-    background: active ? activeColor : defaultBg,
-    color: active ? activeTextColor : defaultText,
-    cursor: 'pointer', fontSize: '12px', fontWeight: '800',
-    transition: 'all 0.15s', whiteSpace: 'nowrap',
-    boxShadow: active ? '0 4px 12px rgba(0,0,0,0.1)' : 'none',
-  });
-
   return (
-    <header style={{
-      background: '#ffffff', borderBottom: '1px solid #e2e8f0',
-      position: 'sticky', top: 0, zIndex: 30,
-      boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
-    }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: '64px', padding: '8px 0', gap: '12px', flexWrap: 'wrap' }}>
-
-          {/* Brand */}
-          <div
-            onClick={() => navigate('/dashboard')}
-            style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', flexShrink: 0 }}
-          >
-            <div style={{
-              width: '40px', height: '40px', borderRadius: '12px',
-              background: 'linear-gradient(135deg, #2563eb, #7c3aed)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: '0 4px 12px rgba(37,99,235,0.3)',
-            }}>
-              <FaSquareCheck size={22} color="#ffffff" />
-            </div>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                <span style={{ fontWeight: '900', fontSize: '16px', color: '#0f172a', letterSpacing: '-0.3px' }}>
-                  Restaurant SOP
-                </span>
-                {getRoleBadge()}
-                <span style={{ padding: '3px 10px', background: '#f1f5f9', border: '1px solid #cbd5e1', color: '#334155', fontSize: '10px', fontWeight: '800', borderRadius: '20px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                  📍 {userBranch}
-                </span>
+    <>
+      {/* Top Sticky Glassmorphism Header */}
+      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs transition-all">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <div className="flex items-center justify-between min-h-[64px] py-2 gap-3">
+            
+            {/* Brand Logo & Info */}
+            <div
+              onClick={() => navigate('/dashboard')}
+              className="flex items-center gap-3 cursor-pointer group min-w-0 flex-1"
+            >
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center shadow-md shadow-blue-500/20 group-hover:scale-105 transition-transform flex-shrink-0">
+                <FaSquareCheck size={22} className="text-white" />
               </div>
-              <div style={{ fontSize: '11px', color: '#64748b', fontWeight: '600', marginTop: '1px' }}>
-                Operational SOP & Compliance System
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-black text-base text-slate-900 tracking-tight">
+                    Restaurant SOP
+                  </span>
+                  {getRoleBadge()}
+                  <span className="px-2.5 py-0.5 bg-slate-100 border border-slate-200 text-slate-700 text-[10px] font-extrabold rounded-full inline-flex items-center gap-1 truncate max-w-[140px] sm:max-w-xs">
+                    📍 {userBranch}
+                  </span>
+                </div>
+                <div className="text-[11px] text-slate-500 font-semibold truncate hidden sm:block">
+                  Operational SOP & Compliance System
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Navigation Items */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto' }}>
-            {/* My Checklist */}
-            <button onClick={() => navigate('/dashboard')} style={navBtnStyle(isOnDash, '#0f172a', '#ffffff', '#ffffff', '#475569', '#e2e8f0')}>
-              <FaClipboardList size={13} />
-              <span className="hide-mobile">My Checklist</span>
-            </button>
-
-            {/* Verification Panel (ONLY Office Staff) */}
-            {isOfficeStaff && (
-              <button onClick={() => navigate('/verify')} style={navBtnStyle(isOnVerify, '#7c3aed', '#ffffff', '#f5f3ff', '#6b21a8', '#ddd6fe')}>
-                <FaUserCheck size={13} />
-                <span className="hide-mobile">Verify</span>
+            {/* Desktop Navigation Items */}
+            <div className="hidden sm:flex items-center gap-2 ml-auto">
+              <button
+                onClick={() => navigate('/dashboard')}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all border ${
+                  isOnDash
+                    ? 'bg-slate-900 text-white border-slate-900 shadow-md shadow-slate-900/10'
+                    : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                }`}
+              >
+                <FaClipboardList size={13} />
+                <span>My Checklist</span>
               </button>
-            )}
 
-            {/* Control Center (ONLY OWNER) */}
-            {isOwner && (
-              <button onClick={() => navigate('/admin')} style={navBtnStyle(isOnAdmin, '#d97706', '#ffffff', '#fffbeb', '#b45309', '#fde68a')}>
-                <FaCrown size={13} />
-                <span className="hide-mobile">Control Center</span>
-              </button>
-            )}
+              {isOfficeStaff && (
+                <button
+                  onClick={() => navigate('/verify')}
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all border ${
+                    isOnVerify
+                      ? 'bg-purple-600 text-white border-purple-600 shadow-md shadow-purple-600/20'
+                      : 'bg-purple-50 text-purple-800 border-purple-200 hover:bg-purple-100'
+                  }`}
+                >
+                  <FaUserCheck size={13} />
+                  <span>Verify</span>
+                </button>
+              )}
 
-            {/* User Profile Menu */}
+              {isOwner && (
+                <button
+                  onClick={() => navigate('/admin')}
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all border ${
+                    isOnAdmin
+                      ? 'bg-amber-600 text-white border-amber-600 shadow-md shadow-amber-600/20'
+                      : 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100'
+                  }`}
+                >
+                  <FaCrown size={13} />
+                  <span>Control Center</span>
+                </button>
+              )}
+            </div>
+
+            {/* User Profile Avatar Dropdown */}
             {user && (
-              <div style={{ position: 'relative' }}>
+              <div className="relative ml-2 flex-shrink-0">
                 <button
                   onClick={() => setDropdownOpen(!dropdownOpen)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '8px',
-                    padding: '6px 10px', borderRadius: '12px',
-                    border: '1px solid #cbd5e1', background: '#f8fafc',
-                    cursor: 'pointer', transition: 'all 0.15s',
-                  }}
+                  className="flex items-center gap-2 p-1.5 sm:px-3 sm:py-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 transition-all cursor-pointer"
                 >
-                  <div style={{
-                    width: '30px', height: '30px', borderRadius: '8px',
-                    background: 'linear-gradient(135deg, #2563eb, #7c3aed)',
-                    color: '#ffffff', fontWeight: '900', fontSize: '13px',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    textTransform: 'uppercase',
-                  }}>
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-purple-600 text-white font-black text-xs flex items-center justify-center uppercase shadow-xs">
                     {(profile?.name || user.email)?.charAt(0)}
                   </div>
-                  <FaChevronDown size={11} color="#64748b" />
+                  <FaChevronDown size={11} className="text-slate-500 hidden sm:block" />
                 </button>
 
                 {dropdownOpen && (
                   <>
                     <div
                       onClick={() => setDropdownOpen(false)}
-                      style={{ position: 'fixed', inset: 0, zIndex: 40 }}
+                      className="fixed inset-0 z-40"
                     />
-                    <div style={{
-                      position: 'absolute', right: 0, top: 'calc(100% + 8px)',
-                      width: '230px', maxWidth: 'calc(100vw - 32px)', background: '#ffffff', borderRadius: '16px',
-                      border: '1px solid #e2e8f0', boxShadow: '0 20px 40px rgba(0,0,0,0.12)',
-                      zIndex: 50, overflow: 'hidden',
-                    }}>
-                      <div style={{ padding: '14px 16px', borderBottom: '1px solid #f1f5f9' }}>
-                        <div style={{ fontWeight: '900', fontSize: '14px', color: '#0f172a', marginBottom: '2px' }}>
+                    <div className="absolute right-0 top-[calc(100%+8px)] w-60 max-w-[calc(100vw-32px)] bg-white rounded-2xl border border-slate-200 shadow-2xl z-50 overflow-hidden">
+                      <div className="p-3.5 border-b border-slate-100 bg-slate-50/50">
+                        <div className="font-black text-sm text-slate-900 truncate">
                           {profile?.name || user.email}
                         </div>
-                        <div style={{ fontSize: '11px', color: '#64748b' }}>{user.email}</div>
-                        <div style={{ fontSize: '10px', color: '#2563eb', fontWeight: '800', marginTop: '6px', textTransform: 'uppercase' }}>
+                        <div className="text-[11px] text-slate-500 truncate">{user.email}</div>
+                        <div className="text-[10px] text-blue-600 font-extrabold mt-1.5 uppercase tracking-wider">
                           Role: {profile?.role?.replace('_', ' ')}
                         </div>
                       </div>
 
                       {isOfficeStaff && (
-                        <button onClick={() => { setDropdownOpen(false); navigate('/verify'); }} style={{
-                          width: '100%', textAlign: 'left', padding: '11px 16px',
-                          border: 'none', background: 'none', cursor: 'pointer',
-                          display: 'flex', alignItems: 'center', gap: '10px',
-                          fontSize: '13px', color: '#334155', fontWeight: '700',
-                        }}>
-                          <FaUserCheck size={14} color="#7c3aed" /> Verification Panel
+                        <button
+                          onClick={() => { setDropdownOpen(false); navigate('/verify'); }}
+                          className="w-full text-left px-4 py-2.5 border-none bg-transparent hover:bg-slate-50 cursor-pointer flex items-center gap-2.5 text-xs text-slate-700 font-bold transition-colors"
+                        >
+                          <FaUserCheck size={14} className="text-purple-600" /> Verification Panel
                         </button>
                       )}
 
                       {isOwner && (
-                        <button onClick={() => { setDropdownOpen(false); navigate('/admin'); }} style={{
-                          width: '100%', textAlign: 'left', padding: '11px 16px',
-                          border: 'none', background: 'none', cursor: 'pointer',
-                          display: 'flex', alignItems: 'center', gap: '10px',
-                          fontSize: '13px', color: '#334155', fontWeight: '700',
-                        }}>
-                          <FaCrown size={14} color="#d97706" /> Control Center
+                        <button
+                          onClick={() => { setDropdownOpen(false); navigate('/admin'); }}
+                          className="w-full text-left px-4 py-2.5 border-none bg-transparent hover:bg-slate-50 cursor-pointer flex items-center gap-2.5 text-xs text-slate-700 font-bold transition-colors"
+                        >
+                          <FaCrown size={14} className="text-amber-600" /> Control Center
                         </button>
                       )}
 
                       {onOpenProfileModal && (
-                        <button onClick={() => { setDropdownOpen(false); onOpenProfileModal(); }} style={{
-                          width: '100%', textAlign: 'left', padding: '11px 16px',
-                          border: 'none', background: 'none', cursor: 'pointer',
-                          display: 'flex', alignItems: 'center', gap: '10px',
-                          fontSize: '13px', color: '#334155', fontWeight: '700',
-                        }}>
-                          <FaUserGear size={14} color="#475569" /> Account Profile
+                        <button
+                          onClick={() => { setDropdownOpen(false); onOpenProfileModal(); }}
+                          className="w-full text-left px-4 py-2.5 border-none bg-transparent hover:bg-slate-50 cursor-pointer flex items-center gap-2.5 text-xs text-slate-700 font-bold transition-colors"
+                        >
+                          <FaUserGear size={14} className="text-slate-500" /> Account Profile
                         </button>
                       )}
 
-                      <div style={{ height: '1px', background: '#f1f5f9', margin: '4px 0' }} />
-                      <button onClick={handleSignOut} style={{
-                        width: '100%', textAlign: 'left', padding: '11px 16px',
-                        border: 'none', background: 'none', cursor: 'pointer',
-                        display: 'flex', alignItems: 'center', gap: '10px',
-                        fontSize: '13px', color: '#dc2626', fontWeight: '800',
-                      }}>
+                      <div className="h-px bg-slate-100 my-1" />
+                      <button
+                        onClick={handleSignOut}
+                        className="w-full text-left px-4 py-2.5 border-none bg-transparent hover:bg-rose-50 cursor-pointer flex items-center gap-2.5 text-xs text-rose-600 font-extrabold transition-colors"
+                      >
                         <FaArrowRightFromBracket size={14} /> Sign Out
                       </button>
                     </div>
@@ -217,11 +191,54 @@ export const Header = ({ onOpenProfileModal, onError }) => {
             )}
           </div>
         </div>
-      </div>
+      </header>
 
-      <style>{`
-        @media (max-width: 640px) { .hide-mobile { display: none; } }
-      `}</style>
-    </header>
+      {/* Floating Bottom Navigation Bar for Mobile (< 640px) */}
+      <div className="fixed bottom-3 left-3 right-3 z-40 bg-slate-900/95 backdrop-blur-xl border border-slate-800 text-white rounded-2xl p-1.5 shadow-2xl flex items-center justify-around sm:hidden">
+        <button
+          onClick={() => navigate('/dashboard')}
+          className={`flex flex-col items-center gap-1 py-1.5 px-3 rounded-xl transition-all ${
+            isOnDash ? 'bg-blue-600 text-white font-extrabold shadow-md' : 'text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <FaClipboardList size={16} />
+          <span className="text-[10px]">Checklist</span>
+        </button>
+
+        {isOfficeStaff && (
+          <button
+            onClick={() => navigate('/verify')}
+            className={`flex flex-col items-center gap-1 py-1.5 px-3 rounded-xl transition-all ${
+              isOnVerify ? 'bg-purple-600 text-white font-extrabold shadow-md' : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <FaUserCheck size={16} />
+            <span className="text-[10px]">Verify</span>
+          </button>
+        )}
+
+        {isOwner && (
+          <button
+            onClick={() => navigate('/admin')}
+            className={`flex flex-col items-center gap-1 py-1.5 px-3 rounded-xl transition-all ${
+              isOnAdmin ? 'bg-amber-600 text-white font-extrabold shadow-md' : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <FaCrown size={16} />
+            <span className="text-[10px]">Control</span>
+          </button>
+        )}
+
+        {onOpenProfileModal && (
+          <button
+            onClick={onOpenProfileModal}
+            className="flex flex-col items-center gap-1 py-1.5 px-3 rounded-xl text-slate-400 hover:text-slate-200 transition-all"
+          >
+            <FaUserGear size={16} />
+            <span className="text-[10px]">Profile</span>
+          </button>
+        )}
+      </div>
+    </>
   );
 };
