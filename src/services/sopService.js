@@ -250,7 +250,8 @@ export const sopService = {
 
     const { data: staff } = await supabase
       .from('profiles')
-      .select('user_id, role');
+      .select('user_id, role, branch_id, shift')
+      .neq('role', 'removed');
 
     if (!staff || staff.length === 0) return 0;
 
@@ -266,6 +267,7 @@ export const sopService = {
         newTasks.push({
           template_id: tmpl.id,
           assigned_to: member.user_id,
+          branch_id: member.branch_id || tmpl.branch_id || null,
           assigned_date: today,
           status: 'pending',
         });

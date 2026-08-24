@@ -556,6 +556,7 @@ export const AdminDashboard = () => {
     setLoading(true);
     setError('');
     try {
+      await sopService.syncTasksForToday('daily').catch(() => {});
       const sum = await ownerService.getPerformanceSummary().catch(e => null);
       const escs = await ownerService.getOpenEscalations().catch(e => []);
       const trend = await ownerService.getWeeklyTrend().catch(e => []);
@@ -1083,12 +1084,14 @@ export const AdminDashboard = () => {
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     {(() => {
-                      const groundStaffFull = safeStaffList.filter(s => ['karigar', 'cashier', 'ground_staff', 'user'].includes(s.role));
-                      const withStats = groundStaffFull.map(s => {
-                        const stats = groundStaffStats.find(gs => gs.user_id === s.user_id);
-                        return stats || {
-                          id: s.id, user_id: s.user_id, name: s.name, email: s.email, role: s.role,
-                          total: 0, completed: 0, eligible: 0, compliance_pct: 0,
+                      const withStats = safeStaffList.map(s => {
+                        const stats = (summary?.staffStats || []).find(gs => gs.user_id === s.user_id || gs.user_id === s.id);
+                        return {
+                          ...s,
+                          total: stats?.total || 0,
+                          completed: stats?.completed || 0,
+                          eligible: stats?.eligible || 0,
+                          compliance_pct: stats ? stats.compliance_pct : 0,
                         };
                       });
                       return withStats
