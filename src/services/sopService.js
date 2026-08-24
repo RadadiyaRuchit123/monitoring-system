@@ -444,7 +444,9 @@ export const sopService = {
     ];
 
     const rows = tasks.map(t => {
-      const branchName = t.staff?.branches?.name || 'Main Branch';
+      const branchName = ['owner', 'office_staff'].includes(t.staff?.role)
+        ? 'Central Office'
+        : (t.staff?.branches?.name || 'Main Branch');
       const completionTime = t.completed_at
         ? new Date(t.completed_at).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'medium' })
         : (t.status === 'completed' && t.submitted_at

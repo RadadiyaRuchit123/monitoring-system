@@ -4,7 +4,7 @@ import { useAuth } from '../hooks/useAuth';
 import { sopService } from '../services/sopService';
 import {
   FaSquareCheck, FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash,
-  FaCrown, FaUserCheck, FaUtensils, FaCreditCard, FaCircleExclamation, FaStore,
+  FaUserCheck, FaUtensils, FaCreditCard, FaCircleExclamation, FaStore,
 } from 'react-icons/fa6';
 
 const RESTAURANT_BRANCHES = [
@@ -35,7 +35,6 @@ const ROLES = [
     color: '#ea580c',
     bg: '#fff7ed',
     border: '#ffedd5',
-    gradient: 'linear-gradient(135deg, #fff7ed, #ffedd5)',
   },
   {
     id: 'cashier',
@@ -45,7 +44,6 @@ const ROLES = [
     color: '#2563eb',
     bg: '#eff6ff',
     border: '#dbeafe',
-    gradient: 'linear-gradient(135deg, #eff6ff, #dbeafe)',
   },
   {
     id: 'office_staff',
@@ -55,7 +53,6 @@ const ROLES = [
     color: '#7c3aed',
     bg: '#f5f3ff',
     border: '#ede9fe',
-    gradient: 'linear-gradient(135deg, #f5f3ff, #ede9fe)',
   },
 ];
 
@@ -117,12 +114,20 @@ export const Signup = () => {
     setError('');
 
     try {
-      let finalBranchId = selectedBranch;
-      const matchedBranch = branches.find(b => b.id === selectedBranch || b.name === selectedBranch);
-      if (matchedBranch) {
-        finalBranchId = matchedBranch.id;
+      let finalBranchId = null;
+      let finalShift = 'all';
+
+      // Branch & Shift ONLY apply to Karigar & Cashier
+      if (['karigar', 'cashier'].includes(role)) {
+        finalBranchId = selectedBranch;
+        const matchedBranch = branches.find(b => b.id === selectedBranch || b.name === selectedBranch);
+        if (matchedBranch) {
+          finalBranchId = matchedBranch.id;
+        }
+        finalShift = selectedShift || 'day';
       }
-      await signup(email.trim(), password, name.trim(), role, 'kitchen', finalBranchId, selectedShift);
+
+      await signup(email.trim(), password, name.trim(), role, 'kitchen', finalBranchId, finalShift);
       navigate('/dashboard');
     } catch (err) {
       setError(err.message || 'Signup failed. Please try again.');
@@ -133,20 +138,20 @@ export const Signup = () => {
 
   const inputStyle = {
     width: '100%', padding: '12px 14px 12px 42px', borderRadius: '12px',
-    background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
-    color: '#f8fafc', fontSize: '14px', fontWeight: '500',
+    background: '#f8fafc', border: '1px solid #cbd5e1',
+    color: '#0f172a', fontSize: '14px', fontWeight: '500',
     outline: 'none', boxSizing: 'border-box', transition: 'all 0.2s',
   };
 
   const handleInputFocus = (e) => {
-    e.target.style.background = 'rgba(255,255,255,0.1)';
-    e.target.style.borderColor = 'rgba(99,102,241,0.5)';
-    e.target.style.boxShadow = '0 0 0 3px rgba(99,102,241,0.15)';
+    e.target.style.background = '#ffffff';
+    e.target.style.borderColor = '#6366f1';
+    e.target.style.boxShadow = '0 0 0 3px rgba(99,102,241,0.1)';
   };
 
   const handleInputBlur = (e) => {
-    e.target.style.background = 'rgba(255,255,255,0.06)';
-    e.target.style.borderColor = 'rgba(255,255,255,0.1)';
+    e.target.style.background = '#f8fafc';
+    e.target.style.borderColor = '#cbd5e1';
     e.target.style.boxShadow = 'none';
   };
 
@@ -161,62 +166,43 @@ export const Signup = () => {
     <div style={{
       minHeight: '100vh', display: 'flex', flexDirection: 'column',
       justifyContent: 'center', alignItems: 'center', padding: '32px 16px',
-      background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 35%, #312e81 65%, #1e1b4b 100%)',
-      position: 'relative', overflow: 'hidden',
+      background: '#f8fafc', color: '#0f172a', fontFamily: "'Inter', sans-serif",
     }}>
-      {/* Animated blobs */}
-      <div style={{
-        position: 'absolute', top: '-15%', right: '-10%', width: '450px', height: '450px',
-        borderRadius: '50%', background: 'radial-gradient(circle, rgba(139,92,246,0.18) 0%, transparent 70%)',
-        animation: 'blob-move 20s ease-in-out infinite', pointerEvents: 'none',
-      }} />
-      <div style={{
-        position: 'absolute', bottom: '-10%', left: '-10%', width: '400px', height: '400px',
-        borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)',
-        animation: 'blob-move 24s ease-in-out infinite reverse', pointerEvents: 'none',
-      }} />
-
-      <div style={{ maxWidth: '480px', width: '100%', zIndex: 1 }}>
+      <div style={{ maxWidth: '480px', width: '100%' }}>
         {/* Brand Header */}
-        <div style={{
-          textAlign: 'center', marginBottom: '24px',
-          animation: 'fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
-        }}>
+        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
           <div style={{
             width: '56px', height: '56px', borderRadius: '18px', margin: '0 auto 14px',
-            background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+            background: 'linear-gradient(135deg, #4f46e5, #7c3aed)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 8px 32px rgba(99,102,241,0.4)',
+            boxShadow: '0 8px 24px rgba(79,70,229,0.3)',
           }}>
             <FaSquareCheck size={28} color="#ffffff" />
           </div>
           <h1 style={{
-            fontSize: '26px', fontWeight: '900', color: '#f8fafc',
+            fontSize: '26px', fontWeight: '900', color: '#0f172a',
             letterSpacing: '-0.5px', margin: '0 0 6px',
           }}>
             Create Your Account
           </h1>
-          <p style={{ fontSize: '14px', color: 'rgba(148,163,184,0.8)', margin: 0, fontWeight: '500' }}>
+          <p style={{ fontSize: '14px', color: '#64748b', margin: 0, fontWeight: '500' }}>
             Select your role to view relevant daily SOP checklists
           </p>
         </div>
 
-        {/* Glassmorphism Card */}
+        {/* Clean White Card */}
         <div style={{
-          background: 'rgba(255,255,255,0.06)',
-          backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
-          border: '1px solid rgba(255,255,255,0.1)',
+          background: '#ffffff',
+          border: '1px solid #e2e8f0',
           borderRadius: '24px', padding: '28px 24px',
-          boxShadow: '0 24px 64px rgba(0,0,0,0.3)',
-          animation: 'slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both',
+          boxShadow: '0 10px 30px rgba(0,0,0,0.04)',
         }}>
           {error && (
             <div style={{
               padding: '12px 14px', borderRadius: '12px', marginBottom: '18px',
-              background: 'rgba(244,63,94,0.1)', border: '1px solid rgba(244,63,94,0.2)',
-              color: '#fb7185', fontSize: '13px', fontWeight: '600',
+              background: '#fef2f2', border: '1px solid #fecaca',
+              color: '#b91c1c', fontSize: '13px', fontWeight: '600',
               display: 'flex', alignItems: 'center', gap: '8px',
-              animation: 'fadeInDown 0.3s ease-out',
             }}>
               <FaCircleExclamation size={14} /> {error}
             </div>
@@ -226,8 +212,8 @@ export const Signup = () => {
             {/* Role Selection */}
             <div>
               <label style={{
-                display: 'block', fontSize: '11px', fontWeight: '700',
-                color: 'rgba(203,213,225,0.8)', textTransform: 'uppercase',
+                display: 'block', fontSize: '11px', fontWeight: '800',
+                color: '#475569', textTransform: 'uppercase',
                 letterSpacing: '0.8px', marginBottom: '10px',
               }}>
                 Select Your Restaurant Role *
@@ -245,26 +231,26 @@ export const Signup = () => {
                         padding: '14px 12px', borderRadius: '14px', textAlign: 'left',
                         border: isSelected
                           ? `2px solid ${r.color}`
-                          : '2px solid rgba(255,255,255,0.08)',
+                          : '2px solid #e2e8f0',
                         background: isSelected
-                          ? `${r.color}15`
-                          : 'rgba(255,255,255,0.04)',
+                          ? r.bg
+                          : '#ffffff',
                         cursor: 'pointer', transition: 'all 0.2s',
-                        boxShadow: isSelected ? `0 4px 16px ${r.color}25` : 'none',
+                        boxShadow: isSelected ? '0 4px 12px rgba(0,0,0,0.05)' : 'none',
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                         <div style={{
                           width: '28px', height: '28px', borderRadius: '8px',
-                          background: `${r.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          background: `${r.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center',
                         }}>
                           <Icon size={14} color={r.color} />
                         </div>
-                        <span style={{ fontSize: '13px', fontWeight: '800', color: isSelected ? r.color : 'rgba(248,250,252,0.9)' }}>
+                        <span style={{ fontSize: '13px', fontWeight: '800', color: isSelected ? r.color : '#0f172a' }}>
                           {r.title}
                         </span>
                       </div>
-                      <div style={{ fontSize: '11px', color: 'rgba(148,163,184,0.7)', lineHeight: 1.4, marginLeft: '36px' }}>
+                      <div style={{ fontSize: '11px', color: '#64748b', lineHeight: 1.4, marginLeft: '36px' }}>
                         {r.desc}
                       </div>
                     </button>
@@ -276,12 +262,12 @@ export const Signup = () => {
             {/* Name */}
             <div>
               <label style={{
-                display: 'block', fontSize: '11px', fontWeight: '700',
-                color: 'rgba(203,213,225,0.8)', textTransform: 'uppercase',
-                letterSpacing: '0.8px', marginBottom: '8px',
+                display: 'block', fontSize: '11px', fontWeight: '800',
+                color: '#475569', textTransform: 'uppercase',
+                letterSpacing: '0.8px', marginBottom: '6px',
               }}>Full Name *</label>
               <div style={{ position: 'relative' }}>
-                <FaUser size={14} color="rgba(148,163,184,0.5)" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }} />
+                <FaUser size={14} color="#94a3b8" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }} />
                 <input
                   type="text" required value={name} onChange={e => setName(e.target.value)}
                   placeholder="e.g. Ramesh Chef" style={inputStyle}
@@ -293,12 +279,12 @@ export const Signup = () => {
             {/* Email */}
             <div>
               <label style={{
-                display: 'block', fontSize: '11px', fontWeight: '700',
-                color: 'rgba(203,213,225,0.8)', textTransform: 'uppercase',
-                letterSpacing: '0.8px', marginBottom: '8px',
+                display: 'block', fontSize: '11px', fontWeight: '800',
+                color: '#475569', textTransform: 'uppercase',
+                letterSpacing: '0.8px', marginBottom: '6px',
               }}>Email Address *</label>
               <div style={{ position: 'relative' }}>
-                <FaEnvelope size={14} color="rgba(148,163,184,0.5)" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }} />
+                <FaEnvelope size={14} color="#94a3b8" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }} />
                 <input
                   type="email" required value={email} onChange={e => setEmail(e.target.value)}
                   placeholder="ramesh@restaurant.com" style={inputStyle}
@@ -307,43 +293,43 @@ export const Signup = () => {
               </div>
             </div>
 
-            {/* Branch & Shift Selection (Karigar / Cashier / Office Staff) */}
-            {['karigar', 'cashier', 'office_staff'].includes(role) && (
+            {/* Branch & Shift Selection (Karigar & Cashier ONLY) */}
+            {['karigar', 'cashier'].includes(role) && (
               <>
                 {/* Branch */}
                 <div>
                   <label style={{
-                    display: 'block', fontSize: '11px', fontWeight: '700',
-                    color: 'rgba(203,213,225,0.8)', textTransform: 'uppercase',
-                    letterSpacing: '0.8px', marginBottom: '8px',
+                    display: 'block', fontSize: '11px', fontWeight: '800',
+                    color: '#475569', textTransform: 'uppercase',
+                    letterSpacing: '0.8px', marginBottom: '6px',
                   }}>Select Your Branch *</label>
                   <div style={{ position: 'relative' }}>
-                    <FaStore size={14} color="rgba(148,163,184,0.5)" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', zIndex: 1 }} />
+                    <FaStore size={14} color="#94a3b8" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', zIndex: 1 }} />
                     <select value={selectedBranch} onChange={e => setSelectedBranch(e.target.value)}
                       style={selectStyle}
                       onFocus={handleInputFocus} onBlur={handleInputBlur}
                     >
                       {branches.map(b => (
-                        <option key={b.id} value={b.id} style={{ background: '#1e1b4b', color: '#f8fafc' }}>
+                        <option key={b.id} value={b.id}>
                           {b.name}
                         </option>
                       ))}
                     </select>
-                    <div style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'rgba(148,163,184,0.5)', fontSize: '10px' }}>▼</div>
+                    <div style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#64748b', fontSize: '10px' }}>▼</div>
                   </div>
                 </div>
 
                 {/* Shift */}
                 <div>
                   <label style={{
-                    display: 'block', fontSize: '11px', fontWeight: '700',
-                    color: 'rgba(203,213,225,0.8)', textTransform: 'uppercase',
-                    letterSpacing: '0.8px', marginBottom: '8px',
+                    display: 'block', fontSize: '11px', fontWeight: '800',
+                    color: '#475569', textTransform: 'uppercase',
+                    letterSpacing: '0.8px', marginBottom: '6px',
                   }}>Select Shift *</label>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                     {[
-                      { id: 'day', label: '☀️ Day Shift', desc: 'Morning / Afternoon', color: '#f59e0b' },
-                      { id: 'night', label: '🌙 Night Shift', desc: 'Evening / Closing', color: '#8b5cf6' },
+                      { id: 'day', label: '☀️ Day Shift', desc: 'Morning / Afternoon', color: '#b45309', bg: '#fffbeb', border: '#fde68a' },
+                      { id: 'night', label: '🌙 Night Shift', desc: 'Evening / Closing', color: '#6d28d9', bg: '#f5f3ff', border: '#ddd6fe' },
                     ].map(s => {
                       const active = selectedShift === s.id;
                       return (
@@ -351,17 +337,15 @@ export const Signup = () => {
                           key={s.id} type="button" onClick={() => setSelectedShift(s.id)}
                           style={{
                             padding: '12px 14px', borderRadius: '12px', textAlign: 'left',
-                            border: active
-                              ? `2px solid ${s.color}`
-                              : '2px solid rgba(255,255,255,0.08)',
-                            background: active ? `${s.color}15` : 'rgba(255,255,255,0.04)',
+                            border: `2px solid ${active ? s.color : '#e2e8f0'}`,
+                            background: active ? s.bg : '#ffffff',
                             cursor: 'pointer', transition: 'all 0.2s',
                           }}
                         >
-                          <div style={{ fontSize: '13px', fontWeight: '800', color: active ? s.color : 'rgba(248,250,252,0.8)' }}>
+                          <div style={{ fontSize: '13px', fontWeight: '800', color: active ? s.color : '#0f172a' }}>
                             {s.label}
                           </div>
-                          <div style={{ fontSize: '10px', color: 'rgba(148,163,184,0.6)', marginTop: '3px' }}>{s.desc}</div>
+                          <div style={{ fontSize: '10px', color: '#64748b', marginTop: '3px' }}>{s.desc}</div>
                         </button>
                       );
                     })}
@@ -373,12 +357,12 @@ export const Signup = () => {
             {/* Password */}
             <div>
               <label style={{
-                display: 'block', fontSize: '11px', fontWeight: '700',
-                color: 'rgba(203,213,225,0.8)', textTransform: 'uppercase',
-                letterSpacing: '0.8px', marginBottom: '8px',
+                display: 'block', fontSize: '11px', fontWeight: '800',
+                color: '#475569', textTransform: 'uppercase',
+                letterSpacing: '0.8px', marginBottom: '6px',
               }}>Password *</label>
               <div style={{ position: 'relative' }}>
-                <FaLock size={14} color="rgba(148,163,184,0.5)" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }} />
+                <FaLock size={14} color="#94a3b8" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }} />
                 <input
                   type={showPassword ? 'text' : 'password'} required
                   value={password} onChange={e => setPassword(e.target.value)}
@@ -386,7 +370,7 @@ export const Signup = () => {
                   onFocus={handleInputFocus} onBlur={handleInputBlur}
                 />
                 <button type="button" onClick={() => setShowPassword(p => !p)}
-                  style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'rgba(148,163,184,0.5)', cursor: 'pointer' }}>
+                  style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}>
                   {showPassword ? <FaEyeSlash size={14} /> : <FaEye size={14} />}
                 </button>
               </div>
@@ -395,12 +379,12 @@ export const Signup = () => {
             {/* Confirm Password */}
             <div>
               <label style={{
-                display: 'block', fontSize: '11px', fontWeight: '700',
-                color: 'rgba(203,213,225,0.8)', textTransform: 'uppercase',
-                letterSpacing: '0.8px', marginBottom: '8px',
+                display: 'block', fontSize: '11px', fontWeight: '800',
+                color: '#475569', textTransform: 'uppercase',
+                letterSpacing: '0.8px', marginBottom: '6px',
               }}>Confirm Password *</label>
               <div style={{ position: 'relative' }}>
-                <FaLock size={14} color="rgba(148,163,184,0.5)" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }} />
+                <FaLock size={14} color="#94a3b8" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }} />
                 <input
                   type={showPassword ? 'text' : 'password'} required
                   value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
@@ -415,14 +399,12 @@ export const Signup = () => {
               type="submit" disabled={loading}
               style={{
                 width: '100%', padding: '13px', borderRadius: '12px', border: 'none',
-                background: loading ? 'rgba(99,102,241,0.5)' : 'linear-gradient(135deg, #6366f1, #4f46e5)',
+                background: loading ? '#94a3b8' : 'linear-gradient(135deg, #4f46e5, #4338ca)',
                 color: 'white', fontSize: '14px', fontWeight: '800',
                 cursor: loading ? 'not-allowed' : 'pointer',
-                boxShadow: '0 4px 20px rgba(99,102,241,0.35)',
+                boxShadow: '0 4px 16px rgba(79,70,229,0.25)',
                 transition: 'all 0.2s', marginTop: '4px',
               }}
-              onMouseEnter={e => { if (!loading) e.currentTarget.style.transform = 'translateY(-1px)'; }}
-              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; }}
             >
               {loading ? 'Creating Account...' : 'Create Account & View SOPs'}
             </button>
@@ -430,37 +412,13 @@ export const Signup = () => {
         </div>
 
         {/* Footer */}
-        <div style={{
-          textAlign: 'center', marginTop: '24px', fontSize: '13px',
-          color: 'rgba(148,163,184,0.6)',
-          animation: 'fadeIn 0.5s ease-out 0.4s both',
-        }}>
+        <div style={{ textAlign: 'center', marginTop: '24px', fontSize: '13px', color: '#64748b' }}>
           Already have an account?{' '}
-          <Link to="/login" style={{ color: '#818cf8', fontWeight: '700', textDecoration: 'none' }}>
+          <Link to="/login" style={{ color: '#4f46e5', fontWeight: '800', textDecoration: 'none' }}>
             Sign In Here
           </Link>
         </div>
-
-        <div style={{ textAlign: 'center', marginTop: '16px', animation: 'fadeIn 0.5s ease-out 0.6s both' }}>
-          <p style={{ fontSize: '11px', color: 'rgba(148,163,184,0.3)', margin: 0, fontWeight: '500' }}>
-            Powered by Iscon Gathiya Operations
-          </p>
-        </div>
       </div>
-
-      {/* Keyframes */}
-      <style>{`
-        @keyframes blob-move {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          25% { transform: translate(30px, -50px) scale(1.1); }
-          50% { transform: translate(-20px, 20px) scale(0.9); }
-          75% { transform: translate(20px, 50px) scale(1.05); }
-        }
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(24px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-      `}</style>
     </div>
   );
 };

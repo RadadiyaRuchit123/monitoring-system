@@ -140,7 +140,15 @@ const StaffCard = ({ staff = {}, rank, branchesList = [], onUpdateStaff, onDelet
           <div style={{ fontSize: '10px', color: '#64748b', fontWeight: '800', marginBottom: '2px', textTransform: 'uppercase' }}>ASSIGNED ROLE</div>
           <select
             value={staff.role || 'karigar'}
-            onChange={e => onUpdateStaff(staff.user_id || staff.id, { role: e.target.value })}
+            onChange={e => {
+              const newRole = e.target.value;
+              const updates = { role: newRole };
+              if (['office_staff', 'owner'].includes(newRole)) {
+                updates.branch_id = null;
+                updates.shift = 'all';
+              }
+              onUpdateStaff(staff.user_id || staff.id, updates);
+            }}
             style={{
               width: '100%', padding: '6px 10px', borderRadius: '10px', fontSize: '12px', fontWeight: '800',
               background: roleSt.bg, color: roleSt.text, border: `1px solid ${roleSt.border}`,
@@ -154,8 +162,8 @@ const StaffCard = ({ staff = {}, rank, branchesList = [], onUpdateStaff, onDelet
           </select>
         </div>
 
-        {/* Interactive Branch Transfer & Shift Selector (Karigar, Cashier, Office Staff) */}
-        {['karigar', 'cashier', 'ground_staff', 'user', 'office_staff'].includes(staff.role) ? (
+        {/* Interactive Branch Transfer & Shift Selector (Only for Karigar & Cashier) */}
+        {['karigar', 'cashier', 'ground_staff', 'user'].includes(staff.role) ? (
           <>
             <div style={{ flex: '1 1 130px' }}>
               <div style={{ fontSize: '10px', color: '#64748b', fontWeight: '800', marginBottom: '2px', textTransform: 'uppercase' }}>📍 ASSIGNED BRANCH</div>
