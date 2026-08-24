@@ -58,7 +58,7 @@ export const sopService = {
 
     // Immediately assign this new template to staff for today
     if (data?.id) {
-      await sopService.syncTasksForToday(data.frequency || 'daily').catch(() => {});
+      await sopService.syncTasksForToday(data.frequency || 'daily').catch(() => { });
     }
 
     return data;
@@ -99,7 +99,7 @@ export const sopService = {
     if (error) throw error;
 
     // Auto-sync after bulk create
-    await sopService.syncTasksForToday('daily').catch(() => {});
+    await sopService.syncTasksForToday('daily').catch(() => { });
 
     return data;
   },
@@ -226,7 +226,7 @@ export const sopService = {
       const uRole = member.role || 'karigar';
       const userTasks = templates.filter(t => {
         const ar = t.assigned_role;
-        return ar === 'all' || ar === uRole || (ar === 'karigar' && ['karigar','ground_staff','user'].includes(uRole)) || (ar === 'cashier' && uRole === 'cashier');
+        return ar === 'all' || ar === uRole || (ar === 'karigar' && ['karigar', 'ground_staff', 'user'].includes(uRole)) || (ar === 'cashier' && uRole === 'cashier');
       });
 
       for (const tmpl of userTasks) {
@@ -388,21 +388,6 @@ export const sopService = {
     return { count: data?.length || 0 };
   },
 
-  async clearOldTasks(daysAgo = 30) {
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - daysAgo);
-    const dateStr = cutoffDate.toISOString().split('T')[0];
-
-    const { data, error } = await supabase
-      .from('assigned_tasks')
-      .delete()
-      .lt('assigned_date', dateStr)
-      .select();
-
-    if (error) throw error;
-    return { count: data?.length || 0, cutoffDate: dateStr };
-  },
-
   async exportTasksToCSV() {
     const tasks = await sopService.getAllStaffTasks();
     if (!tasks || tasks.length === 0) throw new Error('No task records to export.');
@@ -424,8 +409,8 @@ export const sopService = {
       const completionTime = t.completed_at
         ? new Date(t.completed_at).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'medium' })
         : (t.status === 'completed' && t.submitted_at
-            ? new Date(t.submitted_at).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'medium' })
-            : 'Not Completed Yet');
+          ? new Date(t.submitted_at).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'medium' })
+          : 'Not Completed Yet');
 
       const submittedAt = t.submitted_at
         ? new Date(t.submitted_at).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'medium' })

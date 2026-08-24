@@ -14,10 +14,10 @@ import { sopService } from '../services/sopService';
 // ─── STYLING CONSTANTS ────────────────────────────────────────────────
 
 const ROLE_STYLES = {
-  owner:        { bg: '#fffbeb', text: '#b45309', border: '#fde68a' },
+  owner: { bg: '#fffbeb', text: '#b45309', border: '#fde68a' },
   office_staff: { bg: '#f5f3ff', text: '#6b21a8', border: '#ddd6fe' },
-  karigar:      { bg: '#ecfdf5', text: '#047857', border: '#a7f3d0' },
-  cashier:      { bg: '#eff6ff', text: '#1e40af', border: '#bfdbfe' },
+  karigar: { bg: '#ecfdf5', text: '#047857', border: '#a7f3d0' },
+  cashier: { bg: '#eff6ff', text: '#1e40af', border: '#bfdbfe' },
   ground_staff: { bg: '#f1f5f9', text: '#475569', border: '#cbd5e1' },
 };
 
@@ -437,28 +437,14 @@ export const AdminDashboard = () => {
   };
 
   const handleClearTodayTasks = async () => {
-    const choice = window.prompt(
-      "🗑️ TASK CLEANUP OPTIONS:\n\n" +
-      "Type '1' to Clear Today's Tasks (resets today's checklists)\n" +
-      "Type '2' to Purge History Older than 30 Days (frees database space)\n\n" +
-      "Enter 1 or 2:",
-      "1"
-    );
-
-    if (!choice) return;
-
+    if (!confirm('⚠️ Are you sure you want to clear today\'s assigned tasks?')) return;
     setClearing(true);
     setError('');
     try {
-      if (choice === '2') {
-        const res = await sopService.clearOldTasks(30);
-        setSuccess(`🗑️ Successfully purged ${res.count} historical task records older than ${res.cutoffDate}! Database space freed.`);
-      } else {
-        const res = await sopService.clearTodayTasks();
-        setSuccess(`🗑️ Cleared ${res.count} tasks from today's checklist.`);
-      }
+      const res = await sopService.clearTodayTasks();
+      setSuccess(`🗑️ Cleared ${res.count} tasks from today's checklist.`);
       await loadDashboard();
-      setTimeout(() => setSuccess(''), 4500);
+      setTimeout(() => setSuccess(''), 4000);
     } catch (err) {
       setError(err.message || 'Clear failed');
     } finally {
@@ -538,16 +524,16 @@ export const AdminDashboard = () => {
 
   const safeStaffList = Array.isArray(staffList)
     ? staffList
-        .filter(s => s.role !== 'removed')
-        .sort((a, b) => {
-          const pA = ROLE_PRIORITY[a.role] || 99;
-          const pB = ROLE_PRIORITY[b.role] || 99;
-          if (pA !== pB) return pA - pB;
-          const timeA = new Date(a.created_at || 0).getTime();
-          const timeB = new Date(b.created_at || 0).getTime();
-          if (timeA !== timeB) return timeA - timeB;
-          return (a.name || '').localeCompare(b.name || '');
-        })
+      .filter(s => s.role !== 'removed')
+      .sort((a, b) => {
+        const pA = ROLE_PRIORITY[a.role] || 99;
+        const pB = ROLE_PRIORITY[b.role] || 99;
+        if (pA !== pB) return pA - pB;
+        const timeA = new Date(a.created_at || 0).getTime();
+        const timeB = new Date(b.created_at || 0).getTime();
+        if (timeA !== timeB) return timeA - timeB;
+        return (a.name || '').localeCompare(b.name || '');
+      })
     : [];
 
   const filteredStaffList = safeStaffList.filter(s => {
@@ -578,8 +564,8 @@ export const AdminDashboard = () => {
 
   const TABS = [
     { id: 'dashboard', label: '📊 Control Dashboard', desc: 'Real-time performance' },
-    { id: 'sop',       label: '📋 SOP Builder',       desc: 'Templates & tasks' },
-    { id: 'team',      label: '👥 Team Hierarchy',   desc: 'Roles & team members' },
+    { id: 'sop', label: '📋 SOP Builder', desc: 'Templates & tasks' },
+    { id: 'team', label: '👥 Team Hierarchy', desc: 'Roles & team members' },
   ];
 
   return (
@@ -849,7 +835,7 @@ export const AdminDashboard = () => {
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     {(() => {
-                      const groundStaffFull = safeStaffList.filter(s => ['karigar','cashier','ground_staff','user'].includes(s.role));
+                      const groundStaffFull = safeStaffList.filter(s => ['karigar', 'cashier', 'ground_staff', 'user'].includes(s.role));
                       const withStats = groundStaffFull.map(s => {
                         const stats = groundStaffStats.find(gs => gs.user_id === s.user_id);
                         return stats || {
@@ -966,7 +952,7 @@ export const AdminDashboard = () => {
               {[
                 { label: 'Owner', value: safeStaffList.filter(s => s.role === 'owner').length, color: '#b45309', bg: '#fffbeb', border: '#fde68a' },
                 { label: 'Office Staff', value: safeStaffList.filter(s => s.role === 'office_staff').length, color: '#6b21a8', bg: '#f5f3ff', border: '#ddd6fe' },
-                { label: 'Karigar (Chef)', value: safeStaffList.filter(s => ['karigar','ground_staff','user'].includes(s.role)).length, color: '#047857', bg: '#ecfdf5', border: '#a7f3d0' },
+                { label: 'Karigar (Chef)', value: safeStaffList.filter(s => ['karigar', 'ground_staff', 'user'].includes(s.role)).length, color: '#047857', bg: '#ecfdf5', border: '#a7f3d0' },
                 { label: 'Cashier', value: safeStaffList.filter(s => s.role === 'cashier').length, color: '#1e40af', bg: '#eff6ff', border: '#bfdbfe' },
               ].map(s => (
                 <div key={s.label} style={{ padding: '14px', borderRadius: '14px', textAlign: 'center', background: s.bg, border: `1px solid ${s.border}` }}>
