@@ -54,15 +54,6 @@ const ROLES = [
     bg: '#f5f3ff',
     border: '#ddd6fe',
   },
-  {
-    id: 'owner',
-    title: 'Owner',
-    desc: 'Full operational control, performance analytics & SOPs',
-    icon: FaCrown,
-    color: '#b45309',
-    bg: '#fffbeb',
-    border: '#fde68a',
-  },
 ];
 
 export const Signup = () => {
