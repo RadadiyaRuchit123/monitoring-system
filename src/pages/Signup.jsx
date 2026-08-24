@@ -256,7 +256,7 @@ export const Signup = () => {
                 >
                   {branches.map(b => (
                     <option key={b.id} value={b.id}>
-                      {b.name} {b.location ? `(${b.location})` : ''}
+                      {b.location && b.location !== b.name ? `${b.name} (${b.location})` : b.name}
                     </option>
                   ))}
                 </select>
