@@ -10,21 +10,23 @@ export const ownerService = {
   // ─── STAFF & PROFILES ─────────────────────────────────────────────
 
   async getAllStaff() {
+    const ROLE_RANK = { owner: 1, admin: 1, office_staff: 2, karigar: 3, ground_staff: 3, cashier: 4, user: 5 };
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('*, branches(id, name, location)')
         .neq('role', 'removed')
-        .order('role', { ascending: true })
-        .order('name', { ascending: true });
+        .order('created_at', { ascending: true });
 
-      if (!error && data) return data;
+      if (!error && data) {
+        return data.sort((a, b) => (ROLE_RANK[a.role] || 99) - (ROLE_RANK[b.role] || 99));
+      }
     } catch (err) {
       console.warn('getAllStaff error:', err);
     }
 
-    const { data: simple } = await supabase.from('profiles').select('*').neq('role', 'removed');
-    return simple || [];
+    const { data: simple } = await supabase.from('profiles').select('*, branches(id, name, location)').neq('role', 'removed');
+    return (simple || []).sort((a, b) => (ROLE_RANK[a.role] || 99) - (ROLE_RANK[b.role] || 99));
   },
 
   // ─── TODAY'S PERFORMANCE ──────────────────────────────────────────

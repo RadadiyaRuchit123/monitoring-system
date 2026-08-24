@@ -325,6 +325,8 @@ export const AdminDashboard = () => {
   const [templates, setTemplates] = useState([]);
   const [staffList, setStaffList] = useState([]);
   const [frequency, setFrequency] = useState('daily');
+  const [selectedRoleFilter, setSelectedRoleFilter] = useState('all');
+  const [selectedBranchFilter, setSelectedBranchFilter] = useState('all');
 
   // UI state
   const [loading, setLoading] = useState(true);
@@ -515,9 +517,42 @@ export const AdminDashboard = () => {
 
   // ─── RENDER HELPERS ──────────────────────────────────────────────
 
+  const ROLE_PRIORITY = { owner: 1, admin: 1, office_staff: 2, karigar: 3, ground_staff: 3, cashier: 4, user: 5 };
+
   const overall = summary?.overall || {};
   const compliancePct = overall.compliancePct || 0;
-  const safeStaffList = Array.isArray(staffList) ? staffList.filter(s => s.role !== 'removed') : [];
+
+  const safeStaffList = Array.isArray(staffList)
+    ? staffList
+        .filter(s => s.role !== 'removed')
+        .sort((a, b) => {
+          const pA = ROLE_PRIORITY[a.role] || 99;
+          const pB = ROLE_PRIORITY[b.role] || 99;
+          if (pA !== pB) return pA - pB;
+          const timeA = new Date(a.created_at || 0).getTime();
+          const timeB = new Date(b.created_at || 0).getTime();
+          if (timeA !== timeB) return timeA - timeB;
+          return (a.name || '').localeCompare(b.name || '');
+        })
+    : [];
+
+  const filteredStaffList = safeStaffList.filter(s => {
+    if (selectedRoleFilter !== 'all') {
+      if (selectedRoleFilter === 'karigar') {
+        if (!['karigar', 'ground_staff', 'user'].includes(s.role)) return false;
+      } else if (s.role !== selectedRoleFilter) {
+        return false;
+      }
+    }
+    if (selectedBranchFilter !== 'all') {
+      const bName = s.branches?.name || s.branch_name || s.branch || '';
+      if (bName !== selectedBranchFilter && s.branch_id !== selectedBranchFilter) {
+        return false;
+      }
+    }
+    return true;
+  });
+
   const safeTemplates = Array.isArray(templates) ? templates : [];
   const safeEscalations = Array.isArray(escalations) ? escalations : [];
 
@@ -927,18 +962,83 @@ export const AdminDashboard = () => {
               ))}
             </div>
 
-            {/* Staff List */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {safeStaffList.map((s, i) => (
-                <StaffCard
-                  key={s.id || s.user_id}
-                  staff={s}
-                  rank={i + 1}
-                  onRoleChange={handleUpdateStaff}
-                  onDelete={handleDeleteStaff}
-                />
-              ))}
+            {/* Filter Bar: Branch & Role */}
+            <div style={{
+              display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center',
+              justifyContent: 'space-between', marginBottom: '16px',
+              background: '#ffffff', padding: '12px 18px', borderRadius: '16px',
+              border: '1px solid #e2e8f0', boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+            }}>
+              {/* Branch Filter Dropdown */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '12px', fontWeight: '800', color: '#475569' }}>📍 Filter Branch:</span>
+                <select
+                  value={selectedBranchFilter}
+                  onChange={e => setSelectedBranchFilter(e.target.value)}
+                  style={{
+                    padding: '6px 12px', borderRadius: '10px', border: '1px solid #cbd5e1',
+                    background: '#f8fafc', fontSize: '12px', fontWeight: '700', color: '#0f172a',
+                    outline: 'none', cursor: 'pointer',
+                  }}
+                >
+                  <option value="all">All 16 Branches</option>
+                  {[
+                    'Himmatnagar', 'Sola Bridge', 'Bopal', 'Mehsana',
+                    'Statue of Unity', 'VS Hospital', 'Fedra', 'Bhadaj',
+                    'Food Mall', 'Gandhinagar', 'Changodar', 'Vadodara',
+                    'Adalaj', 'Makarba', 'Chotila', 'Bliss Resort (Mehsana)'
+                  ].map(bName => (
+                    <option key={bName} value={bName}>{bName}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Role Filter Buttons */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '12px', fontWeight: '800', color: '#475569', marginRight: '4px' }}>👤 Role:</span>
+                {[
+                  { id: 'all', label: 'All Roles' },
+                  { id: 'owner', label: '👑 Owner' },
+                  { id: 'office_staff', label: '👤 Office Staff' },
+                  { id: 'karigar', label: '🍳 Karigar' },
+                  { id: 'cashier', label: '💰 Cashier' },
+                ].map(rf => (
+                  <button
+                    key={rf.id}
+                    onClick={() => setSelectedRoleFilter(rf.id)}
+                    style={{
+                      padding: '5px 12px', borderRadius: '8px', border: '1px solid',
+                      borderColor: selectedRoleFilter === rf.id ? '#2563eb' : '#e2e8f0',
+                      background: selectedRoleFilter === rf.id ? '#eff6ff' : '#ffffff',
+                      color: selectedRoleFilter === rf.id ? '#2563eb' : '#64748b',
+                      fontSize: '12px', fontWeight: selectedRoleFilter === rf.id ? '800' : '600',
+                      cursor: 'pointer', transition: 'all 0.15s',
+                    }}
+                  >
+                    {rf.label}
+                  </button>
+                ))}
+              </div>
             </div>
+
+            {/* Staff List */}
+            {filteredStaffList.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px 20px', background: '#ffffff', borderRadius: '16px', border: '1px dashed #cbd5e1', color: '#64748b', fontSize: '13px' }}>
+                No team members found matching the selected filters.
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {filteredStaffList.map((s, i) => (
+                  <StaffCard
+                    key={s.id || s.user_id}
+                    staff={s}
+                    rank={i + 1}
+                    onRoleChange={handleUpdateStaff}
+                    onDelete={handleDeleteStaff}
+                  />
+                ))}
+              </div>
+            )}
           </>
         )}
       </div>
