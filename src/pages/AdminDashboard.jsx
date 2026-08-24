@@ -324,6 +324,7 @@ export const AdminDashboard = () => {
   const [recentActivity, setRecentActivity] = useState([]);
   const [templates, setTemplates] = useState([]);
   const [staffList, setStaffList] = useState([]);
+  const [branchesList, setBranchesList] = useState([]);
   const [frequency, setFrequency] = useState('daily');
   const [selectedRoleFilter, setSelectedRoleFilter] = useState('all');
   const [selectedBranchFilter, setSelectedBranchFilter] = useState('all');
@@ -353,12 +354,14 @@ export const AdminDashboard = () => {
       const trend = await ownerService.getWeeklyTrend().catch(e => []);
       const activity = await ownerService.getRecentActivity(15).catch(e => []);
       const staff = await ownerService.getAllStaff().catch(e => []);
+      const bList = await sopService.getBranches().catch(e => []);
 
       setSummary(sum || { overall: {}, staffStats: [], exceptions: [] });
       setEscalations(Array.isArray(escs) ? escs : []);
       setWeeklyTrend(Array.isArray(trend) ? trend : []);
       setRecentActivity(Array.isArray(activity) ? activity : []);
       setStaffList(Array.isArray(staff) ? staff : []);
+      setBranchesList(Array.isArray(bList) ? bList : []);
     } catch (err) {
       console.warn('loadDashboard error:', err);
     } finally {
@@ -981,14 +984,9 @@ export const AdminDashboard = () => {
                     outline: 'none', cursor: 'pointer',
                   }}
                 >
-                  <option value="all">All 16 Branches</option>
-                  {[
-                    'Himmatnagar', 'Sola Bridge', 'Bopal', 'Mehsana',
-                    'Statue of Unity', 'VS Hospital', 'Fedra', 'Bhadaj',
-                    'Food Mall', 'Gandhinagar', 'Changodar', 'Vadodara',
-                    'Adalaj', 'Makarba', 'Chotila', 'Bliss Resort (Mehsana)'
-                  ].map(bName => (
-                    <option key={bName} value={bName}>{bName}</option>
+                  <option value="all">All Branches ({branchesList.length || 16})</option>
+                  {branchesList.map(b => (
+                    <option key={b.id || b.name} value={b.name}>{b.name}</option>
                   ))}
                 </select>
               </div>
