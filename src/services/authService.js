@@ -7,7 +7,7 @@ export const authService = {
   /**
    * Signs up a new user and creates auth + profile record with selected role & department
    */
-  async signUp({ email, password, name, role = 'office_staff' }) {
+  async signUp({ email, password, name, role = 'office_staff', branch_id = null }) {
     if (!isSupabaseConfigured()) {
       throw new Error('Supabase credentials are not configured. Please set up your .env file.');
     }
@@ -20,6 +20,7 @@ export const authService = {
           name,
           full_name: name,
           role,
+          branch_id,
         },
       },
     });
@@ -28,9 +29,9 @@ export const authService = {
       throw new Error(this.getFriendlyAuthErrorMessage(error.message));
     }
 
-    // Immediately insert/upsert profile row with selected role
+    // Immediately insert/upsert profile row with selected role and branch
     if (data.user) {
-      await this.createInitialProfile(data.user.id, email, { name, role });
+      await this.createInitialProfile(data.user.id, email, { name, role, branch_id });
     }
 
     return data;
@@ -75,16 +76,20 @@ export const authService = {
 
     const name = metadata.name || metadata.full_name || email.split('@')[0];
     const role = metadata.role || 'office_staff';
+    const branch_id = metadata.branch_id || null;
+
+    const profileData = {
+      user_id: userId,
+      name,
+      email,
+      role,
+      updated_at: new Date().toISOString(),
+    };
+    if (branch_id) profileData.branch_id = branch_id;
 
     const { data, error } = await supabase
       .from('profiles')
-      .upsert([{
-        user_id: userId,
-        name,
-        email,
-        role,
-        updated_at: new Date().toISOString(),
-      }], { onConflict: 'user_id' })
+      .upsert([profileData], { onConflict: 'user_id' })
       .select()
       .single();
 
@@ -97,20 +102,25 @@ export const authService = {
   },
 
   /**
-   * Fetches profile record for a user ID
+   * Fetches profile record for a user ID with optional branch info
    */
   async getProfile(userId) {
     if (!isSupabaseConfigured() || !userId) return null;
 
     const { data, error } = await supabase
       .from('profiles')
-      .select('*')
+      .select('*, branches(id, name, location)')
       .eq('user_id', userId)
       .maybeSingle();
 
     if (error) {
-      console.warn('Error fetching user profile:', error.message);
-      return null;
+      // Fallback query if join fails
+      const { data: fallback } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle();
+      return fallback;
     }
 
     return data;

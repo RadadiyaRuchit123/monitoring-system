@@ -5,7 +5,7 @@ import { FaSquareCheck, FaCrown, FaUserGear, FaChevronDown, FaArrowRightFromBrac
 import { HiSparkles, HiMiniBuildingStorefront } from 'react-icons/hi2';
 
 export const Header = ({ onOpenProfileModal, onError }) => {
-  const { user, profile, logout, isOwner, isOfficeStaff, isCashier, canAccessControlPanel, userDepartment } = useAuth();
+  const { user, profile, logout, isOwner, isOfficeStaff, isCashier, canAccessControlPanel, userDepartment, userBranch } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -82,11 +82,14 @@ export const Header = ({ onOpenProfileModal, onError }) => {
               <FaSquareCheck size={22} color="#ffffff" />
             </div>
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                 <span style={{ fontWeight: '900', fontSize: '16px', color: '#0f172a', letterSpacing: '-0.3px' }}>
                   Restaurant SOP
                 </span>
                 {getRoleBadge()}
+                <span style={{ padding: '3px 10px', background: '#f1f5f9', border: '1px solid #cbd5e1', color: '#334155', fontSize: '10px', fontWeight: '800', borderRadius: '20px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                  📍 {userBranch}
+                </span>
               </div>
               <div style={{ fontSize: '11px', color: '#64748b', fontWeight: '600', marginTop: '1px' }}>
                 Operational SOP & Compliance System

@@ -1,10 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { sopService } from '../services/sopService';
 import {
   FaSquareCheck, FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash,
-  FaCrown, FaUserCheck, FaUtensils, FaCreditCard, FaCircleExclamation,
+  FaCrown, FaUserCheck, FaUtensils, FaCreditCard, FaCircleExclamation, FaStore,
 } from 'react-icons/fa6';
+
+const DEFAULT_17_BRANCHES = [
+  { id: 'b1', name: 'ISCON Branch', location: 'ISCON Cross Roads' },
+  { id: 'b2', name: 'SG Highway Branch', location: 'SG Highway' },
+  { id: 'b3', name: 'Vastrapur Branch', location: 'Vastrapur Lake' },
+  { id: 'b4', name: 'Satellite Branch', location: 'Star Bazaar Road' },
+  { id: 'b5', name: 'Prahladnagar Branch', location: 'Corporate Road' },
+  { id: 'b6', name: 'Navrangpura Branch', location: 'CG Road' },
+  { id: 'b7', name: 'CG Road Branch', location: 'Municipal Market' },
+  { id: 'b8', name: 'Maninagar Branch', location: 'Kankaria' },
+  { id: 'b9', name: 'Bodakdev Branch', location: 'Judges Bungalow' },
+  { id: 'b10', name: 'Bopal Branch', location: 'South Bopal' },
+  { id: 'b11', name: 'Thaltej Branch', location: 'Thaltej Cross Road' },
+  { id: 'b12', name: 'Sindhu Bhavan Branch', location: 'SBR Road' },
+  { id: 'b13', name: 'Drive In Road Branch', location: 'Drive In' },
+  { id: 'b14', name: 'Naranpura Branch', location: 'Ankur' },
+  { id: 'b15', name: 'Nikol Branch', location: 'SP Ring Road' },
+  { id: 'b16', name: 'Chandkheda Branch', location: 'VT Circle' },
+  { id: 'b17', name: 'Main Head Office', location: 'Central Head Office' },
+];
 
 const ROLES = [
   {
@@ -54,9 +75,22 @@ export const Signup = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [role, setRole] = useState('office_staff');
+  const [branches, setBranches] = useState(DEFAULT_17_BRANCHES);
+  const [selectedBranch, setSelectedBranch] = useState(DEFAULT_17_BRANCHES[0].id);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    sopService.getBranches()
+      .then(dbBranches => {
+        if (dbBranches && dbBranches.length > 0) {
+          setBranches(dbBranches);
+          setSelectedBranch(dbBranches[0].id);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -85,7 +119,7 @@ export const Signup = () => {
     setError('');
 
     try {
-      await signup(email.trim(), password, name.trim(), role);
+      await signup(email.trim(), password, name.trim(), role, 'kitchen', selectedBranch);
       navigate('/dashboard');
     } catch (err) {
       setError(err.message || 'Signup failed. Please try again.');
@@ -205,6 +239,36 @@ export const Signup = () => {
                   placeholder="ramesh@restaurant.com"
                   style={iStyle}
                 />
+              </div>
+            </div>
+
+            {/* Branch Selection Dropdown */}
+            <div>
+              <label style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: '#475569', textTransform: 'uppercase', marginBottom: '6px' }}>
+                SELECT YOUR BRANCH (17 BRANCHES) *
+              </label>
+              <div style={{ position: 'relative' }}>
+                <FaStore size={14} color="#94a3b8" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', zIndex: 1 }} />
+                <select
+                  value={selectedBranch}
+                  onChange={e => setSelectedBranch(e.target.value)}
+                  style={{
+                    ...iStyle,
+                    appearance: 'none',
+                    WebkitAppearance: 'none',
+                    cursor: 'pointer',
+                    fontWeight: '600',
+                  }}
+                >
+                  {branches.map(b => (
+                    <option key={b.id} value={b.id}>
+                      {b.name} {b.location ? `(${b.location})` : ''}
+                    </option>
+                  ))}
+                </select>
+                <div style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#64748b', fontSize: '10px' }}>
+                  ▼
+                </div>
               </div>
             </div>
 
