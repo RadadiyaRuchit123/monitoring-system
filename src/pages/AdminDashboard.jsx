@@ -452,9 +452,14 @@ export const AdminDashboard = () => {
 
   const handleUpdateStaff = async (userId, updates) => {
     try {
+      if (updates?.role === 'removed') {
+        const staff = staffList.find(s => s.user_id === userId || s.id === userId);
+        await handleDeleteStaff(staff?.id, userId, staff?.name || 'Staff Member');
+        return;
+      }
       await sopService.updateStaffProfile(userId, updates);
       const fresh = await ownerService.getAllStaff().catch(e => []);
-      setStaffList(Array.isArray(fresh) ? fresh : []);
+      setStaffList(Array.isArray(fresh) ? fresh.filter(s => s.role !== 'removed') : []);
       setSuccess('Staff role updated!');
       await loadDashboard();
       setTimeout(() => setSuccess(''), 2500);
@@ -467,7 +472,7 @@ export const AdminDashboard = () => {
     try {
       const newProfile = await sopService.createTeamMember(memberData);
       const fresh = await ownerService.getAllStaff().catch(e => []);
-      setStaffList(Array.isArray(fresh) ? fresh : []);
+      setStaffList(Array.isArray(fresh) ? fresh.filter(s => s.role !== 'removed') : []);
       setSuccess(`✅ Created team member: ${newProfile.name}`);
       await loadDashboard();
       setTimeout(() => setSuccess(''), 3000);
@@ -512,7 +517,7 @@ export const AdminDashboard = () => {
 
   const overall = summary?.overall || {};
   const compliancePct = overall.compliancePct || 0;
-  const safeStaffList = Array.isArray(staffList) ? staffList : [];
+  const safeStaffList = Array.isArray(staffList) ? staffList.filter(s => s.role !== 'removed') : [];
   const safeTemplates = Array.isArray(templates) ? templates : [];
   const safeEscalations = Array.isArray(escalations) ? escalations : [];
 
