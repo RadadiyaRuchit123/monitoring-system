@@ -240,8 +240,9 @@ const TaskVerificationCard = ({ task, onVerify }) => {
 
 export const VerificationPanel = () => {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('pending'); // 'pending' | 'escalations' | 'all'
+  const [activeTab, setActiveTab] = useState('pending'); // 'pending' | 'verified' | 'escalations'
   const [tasks, setTasks] = useState([]);
+  const [verifiedTasks, setVerifiedTasks] = useState([]);
   const [escalations, setEscalations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
@@ -254,11 +255,13 @@ export const VerificationPanel = () => {
     setLoading(true);
     setError('');
     try {
-      const [pendingTasks, allEscs] = await Promise.all([
+      const [pendingTasks, doneTasks, allEscs] = await Promise.all([
         verificationService.getPendingVerifications(),
+        verificationService.getVerifiedTasks(),
         verificationService.getUnresolvedEscalations(),
       ]);
       setTasks(pendingTasks);
+      setVerifiedTasks(doneTasks);
       setEscalations(allEscs);
     } catch (err) {
       if (!err.message?.includes('JWT issued at future')) {
@@ -359,9 +362,10 @@ export const VerificationPanel = () => {
         {success && <div style={{ padding: '12px 16px', borderRadius: '12px', marginBottom: '16px', background: '#ecfdf5', border: '1px solid #a7f3d0', color: '#047857', fontSize: '13px', fontWeight: '600' }}>{success}</div>}
 
         {/* Tab selection */}
-        <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
           {[
             { id: 'pending', label: `Pending Audit (${tasks.length})` },
+            { id: 'verified', label: `✅ Verified Audit (${verifiedTasks.length})` },
             { id: 'escalations', label: `Escalations (${escalations.length})` },
           ].map(t => (
             <button
@@ -395,6 +399,53 @@ export const VerificationPanel = () => {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {tasks.map(t => <TaskVerificationCard key={t.id} task={t} onVerify={handleVerify} />)}
+            </div>
+          )
+        ) : activeTab === 'verified' ? (
+          verifiedTasks.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '50px 20px', background: '#ffffff', borderRadius: '20px', border: '1px dashed #cbd5e1' }}>
+              <FaCircleCheck size={40} color="#7c3aed" style={{ marginBottom: '12px' }} />
+              <div style={{ color: '#0f172a', fontSize: '16px', fontWeight: '900' }}>No Verified Tasks History Yet</div>
+              <div style={{ color: '#64748b', fontSize: '13px', marginTop: '4px' }}>Verified tasks will appear here after Office Staff audit.</div>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {verifiedTasks.map(t => {
+                const ver = t.task_verifications?.[0] || {};
+                const isPass = ver.verification_status === 'verified_pass' || ver.verification_status === 'verified';
+                return (
+                  <div key={t.id} style={{
+                    padding: '16px 20px', borderRadius: '16px', background: '#ffffff', border: '1px solid #e2e8f0',
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap',
+                  }}>
+                    <div>
+                      <div style={{ fontSize: '14px', fontWeight: '900', color: '#0f172a' }}>
+                        {t.task_templates?.title || 'SOP Task'}
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
+                        Staff: <strong>{t.staff?.name || 'Ground Staff'}</strong> ({t.staff?.role || 'karigar'})
+                      </div>
+                      {ver.follow_up_note && (
+                        <div style={{ fontSize: '11px', color: '#475569', marginTop: '4px', fontStyle: 'italic' }}>
+                          Note: "{ver.follow_up_note}"
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <span style={{
+                        padding: '4px 12px', borderRadius: '12px', fontSize: '11px', fontWeight: '800',
+                        background: isPass ? '#ecfdf5' : '#fffbeb', color: isPass ? '#059669' : '#b45309',
+                        border: `1px solid ${isPass ? '#a7f3d0' : '#fde68a'}`, display: 'inline-block',
+                      }}>
+                        {isPass ? '✅ VERIFIED PASS' : `⚠️ ${ver.verification_status?.toUpperCase() || 'VERIFIED'}`}
+                      </span>
+                      <div style={{ fontSize: '11px', color: '#475569', marginTop: '4px', fontWeight: '700' }}>
+                        Verified by: <span style={{ color: '#6d28d9', fontWeight: '800' }}>👤 {ver.verifier?.name || 'Office Staff'}</span> ({ver.verifier?.role === 'owner' ? '👑 Owner' : '📋 Office Staff'}) at {new Date(ver.verified_at || Date.now()).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )
         ) : (

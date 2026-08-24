@@ -67,6 +67,7 @@ export const Signup = () => {
   const [role, setRole] = useState('');
   const [branches, setBranches] = useState(RESTAURANT_BRANCHES);
   const [selectedBranch, setSelectedBranch] = useState(RESTAURANT_BRANCHES[0].id);
+  const [selectedShift, setSelectedShift] = useState('day');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -113,7 +114,7 @@ export const Signup = () => {
     setError('');
 
     try {
-      await signup(email.trim(), password, name.trim(), role, 'kitchen', selectedBranch);
+      await signup(email.trim(), password, name.trim(), role, 'kitchen', selectedBranch, selectedShift);
       navigate('/dashboard');
     } catch (err) {
       setError(err.message || 'Signup failed. Please try again.');
@@ -236,35 +237,71 @@ export const Signup = () => {
               </div>
             </div>
 
-            {/* Branch Selection Dropdown */}
-            <div>
-              <label style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: '#475569', textTransform: 'uppercase', marginBottom: '6px' }}>
-                SELECT YOUR BRANCH (16 BRANCHES) *
-              </label>
-              <div style={{ position: 'relative' }}>
-                <FaStore size={14} color="#94a3b8" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', zIndex: 1 }} />
-                <select
-                  value={selectedBranch}
-                  onChange={e => setSelectedBranch(e.target.value)}
-                  style={{
-                    ...iStyle,
-                    appearance: 'none',
-                    WebkitAppearance: 'none',
-                    cursor: 'pointer',
-                    fontWeight: '600',
-                  }}
-                >
-                  {branches.map(b => (
-                    <option key={b.id} value={b.id}>
-                      {b.name}
-                    </option>
-                  ))}
-                </select>
-                <div style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#64748b', fontSize: '10px' }}>
-                  ▼
+            {/* Branch & Shift Selection (Only for Karigar & Cashier) */}
+            {['karigar', 'cashier'].includes(role) && (
+              <>
+                {/* Branch Selection Dropdown */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: '#475569', textTransform: 'uppercase', marginBottom: '6px' }}>
+                    SELECT YOUR BRANCH (16 BRANCHES) *
+                  </label>
+                  <div style={{ position: 'relative' }}>
+                    <FaStore size={14} color="#94a3b8" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', zIndex: 1 }} />
+                    <select
+                      value={selectedBranch}
+                      onChange={e => setSelectedBranch(e.target.value)}
+                      style={{
+                        ...iStyle,
+                        appearance: 'none',
+                        WebkitAppearance: 'none',
+                        cursor: 'pointer',
+                        fontWeight: '600',
+                      }}
+                    >
+                      {branches.map(b => (
+                        <option key={b.id} value={b.id}>
+                          {b.name}
+                        </option>
+                      ))}
+                    </select>
+                    <div style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#64748b', fontSize: '10px' }}>
+                      ▼
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
+
+                {/* Shift Selection */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: '#475569', textTransform: 'uppercase', marginBottom: '6px' }}>
+                    SELECT SHIFT *
+                  </label>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    {[
+                      { id: 'day', label: '☀️ Day Shift', desc: 'Morning / Afternoon' },
+                      { id: 'night', label: '🌙 Night Shift', desc: 'Evening / Night Closing' },
+                    ].map(s => {
+                      const active = selectedShift === s.id;
+                      return (
+                        <button
+                          key={s.id}
+                          type="button"
+                          onClick={() => setSelectedShift(s.id)}
+                          style={{
+                            padding: '10px 12px', borderRadius: '12px', textAlign: 'left',
+                            border: `2px solid ${active ? '#2563eb' : '#e2e8f0'}`,
+                            background: active ? '#eff6ff' : '#ffffff',
+                            cursor: 'pointer', transition: 'all 0.15s',
+                          }}
+                        >
+                          <div style={{ fontSize: '13px', fontWeight: '800', color: active ? '#2563eb' : '#0f172a' }}>{s.label}</div>
+                          <div style={{ fontSize: '10px', color: '#64748b', marginTop: '2px' }}>{s.desc}</div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
+            )}
 
             {/* Password input */}
             <div>

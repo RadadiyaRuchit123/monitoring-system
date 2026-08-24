@@ -3,13 +3,14 @@ import {
   Crown, TrendingUp, Users, CheckCircle2,
   XCircle, AlertTriangle, Clock, RefreshCw,
   ShieldAlert, Send, Plus, Trash2, X, BookOpen,
-  FileSpreadsheet, Trash, UserPlus, Zap,
+  FileSpreadsheet, FileText, Trash, UserPlus, Zap,
 } from 'lucide-react';
 import { Header } from '../components/Header';
 import { LoadingSpinner } from '../components/LoadingState';
 import { useAuth } from '../hooks/useAuth';
 import { ownerService } from '../services/ownerService';
 import { sopService } from '../services/sopService';
+import { exportService } from '../services/exportService';
 
 // ─── STYLING CONSTANTS ────────────────────────────────────────────────
 
@@ -90,7 +91,9 @@ const StatCard = ({ icon: Icon, label, value, subtext, color, bg, border }) => (
 
 // ─── STAFF CARD ────────────────────────────────────────────────────────
 
-const StaffCard = ({ staff = {}, rank, onRoleChange, onDelete }) => {
+// ─── STAFF CARD ────────────────────────────────────────────────────────
+
+const StaffCard = ({ staff = {}, rank, branchesList = [], onUpdateStaff, onDelete }) => {
   const pct = staff.compliance_pct || 0;
   const color = pct >= 90 ? '#059669' : pct >= 75 ? '#d97706' : '#dc2626';
   const roleSt = ROLE_STYLES[staff.role] || { bg: '#f1f5f9', text: '#475569', border: '#cbd5e1' };
@@ -98,89 +101,158 @@ const StaffCard = ({ staff = {}, rank, onRoleChange, onDelete }) => {
   return (
     <div style={{
       background: '#ffffff', border: '1px solid #e2e8f0',
-      borderRadius: '16px', padding: '16px 20px',
-      display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap',
+      borderRadius: '16px', padding: '14px 16px',
+      display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap',
       boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
     }}>
-      {/* Rank */}
-      <div style={{
-        width: '32px', height: '32px', borderRadius: '8px',
-        background: '#f8fafc', border: '1px solid #e2e8f0',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: '13px', fontWeight: '900', color: '#64748b', flexShrink: 0,
-      }}>
-        #{rank}
-      </div>
+      {/* Rank & Avatar Group */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+        <div style={{
+          width: '30px', height: '30px', borderRadius: '8px',
+          background: '#f8fafc', border: '1px solid #e2e8f0',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: '12px', fontWeight: '900', color: '#64748b', flexShrink: 0,
+        }}>
+          #{rank}
+        </div>
 
-      {/* Avatar */}
-      <div style={{
-        width: '40px', height: '40px', borderRadius: '12px',
-        background: roleSt.bg, border: `1px solid ${roleSt.border}`,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: '16px', fontWeight: '900', color: roleSt.text, flexShrink: 0,
-        textTransform: 'uppercase',
-      }}>
-        {(staff.name || 'S').charAt(0)}
-      </div>
-
-      {/* Info */}
-      <div style={{ flex: 1, minWidth: '160px' }}>
-        <div style={{ color: '#0f172a', fontWeight: '900', fontSize: '14px' }}>{staff.name || 'Staff Member'}</div>
-        <div style={{ color: '#64748b', fontSize: '11px' }}>{staff.email}</div>
-      </div>
-
-      {/* Interactive Role Selector */}
-      <div>
-        <div style={{ fontSize: '10px', color: '#64748b', fontWeight: '800', marginBottom: '2px', textTransform: 'uppercase' }}>ASSIGNED ROLE</div>
-        <select
-          value={staff.role || 'karigar'}
-          onChange={e => onRoleChange(staff.user_id || staff.id, { role: e.target.value })}
-          style={{
-            padding: '6px 12px', borderRadius: '10px', fontSize: '12px', fontWeight: '800',
-            background: roleSt.bg, color: roleSt.text, border: `1px solid ${roleSt.border}`,
-            cursor: 'pointer', outline: 'none',
-          }}
-        >
-          <option value="karigar">🍳 KARIGAR (CHEF)</option>
-          <option value="cashier">💰 CASHIER</option>
-          <option value="office_staff">📋 OFFICE STAFF</option>
-          <option value="owner">👑 OWNER</option>
-        </select>
-      </div>
-
-      {/* Stats */}
-      <div style={{ textAlign: 'right', flexShrink: 0, minWidth: '90px' }}>
-        <div style={{ fontSize: '18px', fontWeight: '900', color }}>{pct}%</div>
-        <div style={{ fontSize: '11px', color: '#64748b' }}>{staff.completed || 0}/{staff.eligible || 0} done</div>
-        <div style={{ width: '90px', marginTop: '3px' }}>
-          <ComplianceBar pct={pct} showLabel={false} />
+        <div style={{
+          width: '38px', height: '38px', borderRadius: '12px',
+          background: roleSt.bg, border: `1px solid ${roleSt.border}`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: '15px', fontWeight: '900', color: roleSt.text, flexShrink: 0,
+          textTransform: 'uppercase',
+        }}>
+          {(staff.name || 'S').charAt(0)}
         </div>
       </div>
 
-      {/* Delete Staff Member Button */}
-      {onDelete && (
-        <button
-          onClick={() => onDelete(staff.id, staff.user_id, staff.name)}
-          style={{
-            padding: '8px 12px', borderRadius: '10px', border: '1px solid #fecaca',
-            background: '#fef2f2', color: '#b91c1c', cursor: 'pointer',
-            fontSize: '12px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px',
-          }}
-        >
-          <Trash size={12} /> Remove
-        </button>
-      )}
+      {/* Info */}
+      <div style={{ flex: '1 1 150px', minWidth: '130px' }}>
+        <div style={{ color: '#0f172a', fontWeight: '900', fontSize: '14px', wordBreak: 'break-word' }}>{staff.name || 'Staff Member'}</div>
+        <div style={{ color: '#64748b', fontSize: '11px', wordBreak: 'break-all' }}>{staff.email}</div>
+      </div>
+
+      {/* Interactive Controls Wrapper */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', flex: '1 1 280px' }}>
+        {/* Interactive Role Selector */}
+        <div style={{ flex: '1 1 120px' }}>
+          <div style={{ fontSize: '10px', color: '#64748b', fontWeight: '800', marginBottom: '2px', textTransform: 'uppercase' }}>ASSIGNED ROLE</div>
+          <select
+            value={staff.role || 'karigar'}
+            onChange={e => onUpdateStaff(staff.user_id || staff.id, { role: e.target.value })}
+            style={{
+              width: '100%', padding: '6px 10px', borderRadius: '10px', fontSize: '12px', fontWeight: '800',
+              background: roleSt.bg, color: roleSt.text, border: `1px solid ${roleSt.border}`,
+              cursor: 'pointer', outline: 'none', boxSizing: 'border-box',
+            }}
+          >
+            <option value="karigar">🍳 KARIGAR (CHEF)</option>
+            <option value="cashier">💰 CASHIER</option>
+            <option value="office_staff">📋 OFFICE STAFF</option>
+            <option value="owner">👑 OWNER</option>
+          </select>
+        </div>
+
+        {/* Interactive Branch Transfer & Shift Selector (Only for Karigar & Cashier) */}
+        {['karigar', 'cashier', 'ground_staff', 'user'].includes(staff.role) ? (
+          <>
+            <div style={{ flex: '1 1 130px' }}>
+              <div style={{ fontSize: '10px', color: '#64748b', fontWeight: '800', marginBottom: '2px', textTransform: 'uppercase' }}>📍 ASSIGNED BRANCH</div>
+              <select
+                value={staff.branch_id || ''}
+                onChange={e => onUpdateStaff(staff.user_id || staff.id, { branch_id: e.target.value || null })}
+                style={{
+                  width: '100%', padding: '6px 10px', borderRadius: '10px', fontSize: '12px', fontWeight: '700',
+                  background: '#f8fafc', color: '#0f172a', border: '1px solid #cbd5e1',
+                  cursor: 'pointer', outline: 'none', boxSizing: 'border-box',
+                }}
+              >
+                <option value="">Default Branch</option>
+                {branchesList.map(b => (
+                  <option key={b.id} value={b.id}>{b.name}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Interactive Shift Change Selector */}
+            <div style={{ flex: '1 1 120px' }}>
+              <div style={{ fontSize: '10px', color: '#64748b', fontWeight: '800', marginBottom: '2px', textTransform: 'uppercase' }}>⏰ SHIFT</div>
+              <select
+                value={staff.shift || 'all'}
+                onChange={e => onUpdateStaff(staff.user_id || staff.id, { shift: e.target.value })}
+                style={{
+                  width: '100%', padding: '6px 10px', borderRadius: '10px', fontSize: '12px', fontWeight: '800',
+                  background: staff.shift === 'day' ? '#fffbeb' : staff.shift === 'night' ? '#f5f3ff' : '#eff6ff',
+                  color: staff.shift === 'day' ? '#b45309' : staff.shift === 'night' ? '#6d28d9' : '#1d4ed8',
+                  border: `1px solid ${staff.shift === 'day' ? '#fde68a' : staff.shift === 'night' ? '#ddd6fe' : '#bfdbfe'}`,
+                  cursor: 'pointer', outline: 'none', boxSizing: 'border-box',
+                }}
+              >
+                <option value="all">🔄 ALL SHIFTS</option>
+                <option value="day">☀️ DAY SHIFT</option>
+                <option value="night">🌙 NIGHT SHIFT</option>
+              </select>
+            </div>
+          </>
+        ) : (
+          <div style={{
+            padding: '6px 12px', borderRadius: '10px',
+            background: staff.role === 'owner' ? '#fef3c7' : '#f5f3ff',
+            border: `1px solid ${staff.role === 'owner' ? '#fde68a' : '#ddd6fe'}`,
+            color: staff.role === 'owner' ? '#b45309' : '#6d28d9',
+            fontSize: '11px', fontWeight: '800', whiteSpace: 'nowrap',
+          }}>
+            {staff.role === 'owner' ? '👑 ALL BRANCHES & SHIFTS OVERSEER' : '📋 CENTRAL OFFICE OVERSEER'}
+          </div>
+        )}
+      </div>
+
+      {/* Stats & Delete */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginLeft: 'auto', flexShrink: 0 }}>
+        {['karigar', 'cashier', 'ground_staff', 'user'].includes(staff.role) ? (
+          <div style={{ textAlign: 'right', flexShrink: 0, minWidth: '75px' }}>
+            <div style={{ fontSize: '16px', fontWeight: '900', color }}>{pct}%</div>
+            <div style={{ fontSize: '10px', color: '#64748b' }}>{staff.completed || 0}/{staff.eligible || 0} done</div>
+            <div style={{ width: '75px', marginTop: '3px' }}>
+              <ComplianceBar pct={pct} showLabel={false} />
+            </div>
+          </div>
+        ) : (
+          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+            <span style={{ fontSize: '11px', fontWeight: '800', color: '#059669', background: '#ecfdf5', border: '1px solid #a7f3d0', padding: '4px 10px', borderRadius: '8px' }}>
+              FULL ACCESS
+            </span>
+          </div>
+        )}
+
+        {/* Delete Staff Member Button (Not allowed for Owner) */}
+        {onDelete && staff.role !== 'owner' && (
+          <button
+            onClick={() => onDelete(staff.id, staff.user_id, staff.name)}
+            style={{
+              padding: '8px 10px', borderRadius: '10px', border: '1px solid #fecaca',
+              background: '#fef2f2', color: '#b91c1c', cursor: 'pointer',
+              fontSize: '12px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px',
+            }}
+          >
+            <Trash size={12} />
+          </button>
+        )}
+      </div>
     </div>
   );
 };
 
 // ─── ADD MEMBER MODAL ────────────────────────────────────────────────
 
-const AddMemberModal = ({ onSave, onClose }) => {
+const AddMemberModal = ({ branchesList = [], onSave, onClose }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('karigar');
+  const [branchId, setBranchId] = useState(branchesList[0]?.id || '');
+  const [shift, setShift] = useState('day');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -197,7 +269,7 @@ const AddMemberModal = ({ onSave, onClose }) => {
     setSaving(true);
     setError('');
     try {
-      await onSave({ name: name.trim(), email: email.trim(), password, role });
+      await onSave({ name: name.trim(), email: email.trim(), password, role, branch_id: branchId || null, shift });
       onClose();
     } catch (err) {
       setError(err.message || 'Failed to create member');
@@ -214,7 +286,7 @@ const AddMemberModal = ({ onSave, onClose }) => {
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(4px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-      <div style={{ background: '#ffffff', borderRadius: '24px', padding: '28px', width: '100%', maxWidth: '440px', border: '1px solid #e2e8f0', boxShadow: '0 25px 50px rgba(0,0,0,0.15)' }}>
+      <div style={{ background: '#ffffff', borderRadius: '24px', padding: '28px', width: '100%', maxWidth: '460px', border: '1px solid #e2e8f0', boxShadow: '0 25px 50px rgba(0,0,0,0.15)', maxHeight: '90vh', overflowY: 'auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <div style={{ color: '#0f172a', fontWeight: '900', fontSize: '18px' }}>➕ Add New Team Member</div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}><X size={18} /></button>
@@ -244,6 +316,48 @@ const AddMemberModal = ({ onSave, onClose }) => {
             <label style={lStyle}>PASSWORD *</label>
             <input type="password" required value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" style={iStyle} />
           </div>
+
+          {/* Branch Dropdown & Shift Selector (Only for Karigar & Cashier) */}
+          {['karigar', 'cashier'].includes(role) && (
+            <>
+              <div>
+                <label style={lStyle}>SELECT BRANCH (16 BRANCHES) *</label>
+                <select value={branchId} onChange={e => setBranchId(e.target.value)} style={iStyle}>
+                  {branchesList.map(b => (
+                    <option key={b.id} value={b.id}>{b.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label style={lStyle}>SELECT SHIFT *</label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  {[
+                    { id: 'day', label: '☀️ Day Shift', desc: 'Morning / Afternoon' },
+                    { id: 'night', label: '🌙 Night Shift', desc: 'Evening / Night Closing' },
+                  ].map(s => {
+                    const active = shift === s.id;
+                    return (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => setShift(s.id)}
+                        style={{
+                          padding: '10px 12px', borderRadius: '12px', textAlign: 'left',
+                          border: `2px solid ${active ? '#2563eb' : '#e2e8f0'}`,
+                          background: active ? '#eff6ff' : '#ffffff',
+                          cursor: 'pointer', transition: 'all 0.15s',
+                        }}
+                      >
+                        <div style={{ fontSize: '13px', fontWeight: '800', color: active ? '#2563eb' : '#0f172a' }}>{s.label}</div>
+                        <div style={{ fontSize: '10px', color: '#64748b', marginTop: '2px' }}>{s.desc}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </>
+          )}
 
           <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '10px' }}>
             <button type="button" onClick={onClose} style={{ padding: '10px 16px', borderRadius: '10px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#475569', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>Cancel</button>
@@ -311,6 +425,90 @@ const AddTemplateModal = ({ onSave, onClose }) => {
   );
 };
 
+// ─── EXPORT DATE RANGE MODAL ──────────────────────────────────────────
+
+const ExportRangeModal = ({ mode = 'csv', branchesList = [], onExport, onClose }) => {
+  const todayStr = new Date().toISOString().split('T')[0];
+  const past7Days = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+  const [startDate, setStartDate] = useState(past7Days);
+  const [endDate, setEndDate] = useState(todayStr);
+  const [branchId, setBranchId] = useState('all');
+  const [exporting, setExporting] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!startDate || !endDate) {
+      setError('Please select both Start Date and End Date.');
+      return;
+    }
+    setExporting(true);
+    setError('');
+    try {
+      await onExport({
+        mode,
+        startDate,
+        endDate,
+        branchId: branchId === 'all' ? null : branchId,
+      });
+      onClose();
+    } catch (err) {
+      setError(err.message || 'Export failed');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const iStyle = { width: '100%', padding: '9px 12px', borderRadius: '10px', background: '#f8fafc', border: '1px solid #cbd5e1', color: '#0f172a', fontSize: '12px', outline: 'none', boxSizing: 'border-box' };
+  const lStyle = { display: 'block', fontSize: '11px', fontWeight: '800', color: '#475569', marginBottom: '4px' };
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(4px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+      <div style={{ background: '#ffffff', borderRadius: '24px', padding: '24px', width: '100%', maxWidth: '420px', border: '1px solid #e2e8f0', boxShadow: '0 25px 50px rgba(0,0,0,0.15)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <div style={{ color: '#0f172a', fontWeight: '900', fontSize: '17px' }}>
+            {mode === 'csv' ? '📥 Export CSV Data' : '📄 Export PDF Audit Report'}
+          </div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}><X size={18} /></button>
+        </div>
+
+        {error && <div style={{ padding: '10px 14px', borderRadius: '10px', background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', fontSize: '12px', marginBottom: '14px', fontWeight: '600' }}>{error}</div>}
+
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+            <div>
+              <label style={lStyle}>FROM DATE *</label>
+              <input type="date" required value={startDate} onChange={e => setStartDate(e.target.value)} style={iStyle} />
+            </div>
+            <div>
+              <label style={lStyle}>TO DATE *</label>
+              <input type="date" required value={endDate} onChange={e => setEndDate(e.target.value)} style={iStyle} />
+            </div>
+          </div>
+
+          <div>
+            <label style={lStyle}>FILTER BRANCH</label>
+            <select value={branchId} onChange={e => setBranchId(e.target.value)} style={iStyle}>
+              <option value="all">All Branches (16)</option>
+              {branchesList.map(b => (
+                <option key={b.id} value={b.id}>{b.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '10px' }}>
+            <button type="button" onClick={onClose} style={{ padding: '9px 16px', borderRadius: '10px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#475569', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>Cancel</button>
+            <button type="submit" disabled={exporting} style={{ padding: '9px 18px', borderRadius: '10px', border: 'none', background: mode === 'csv' ? 'linear-gradient(135deg, #059669, #047857)' : 'linear-gradient(135deg, #7c3aed, #6d28d9)', color: '#fff', cursor: 'pointer', fontSize: '12px', fontWeight: '800' }}>
+              {exporting ? 'Processing...' : (mode === 'csv' ? '📥 Download CSV' : '📄 Generate PDF')}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 // ─── MAIN OWNER DASHBOARD ──────────────────────────────────────────────
 
 export const AdminDashboard = () => {
@@ -328,6 +526,7 @@ export const AdminDashboard = () => {
   const [frequency, setFrequency] = useState('daily');
   const [selectedRoleFilter, setSelectedRoleFilter] = useState('all');
   const [selectedBranchFilter, setSelectedBranchFilter] = useState('all');
+  const [exportModalMode, setExportModalMode] = useState(null);
 
   // UI state
   const [loading, setLoading] = useState(true);
@@ -425,17 +624,36 @@ export const AdminDashboard = () => {
     finally { setLoadingSample(false); }
   };
 
-  const handleExportCSV = async () => {
-    setExporting(true);
+  const handleExportCSV = () => {
+    setExportModalMode('csv');
+  };
+
+  const handleExportPDF = () => {
+    setExportModalMode('pdf');
+  };
+
+  const handleRangeExport = async ({ mode, startDate, endDate, branchId }) => {
     setError('');
     try {
-      const res = await sopService.exportTasksToCSV();
-      setSuccess(`📥 Exported ${res.count} tasks to CSV file! Check your downloads.`);
+      if (mode === 'csv') {
+        const res = await sopService.exportTasksToCSV({ startDate, endDate, branchId });
+        setSuccess(`📥 Exported ${res.count} tasks (${startDate} to ${endDate}) to CSV file! Check your downloads.`);
+      } else {
+        const tasks = await sopService.getAllStaffTasks({ startDate, endDate, branchId, frequency: null });
+        exportService.exportPDFReport({
+          startDate,
+          endDate,
+          summary,
+          staffList,
+          tasks,
+          escalations,
+          branchesList,
+        });
+        setSuccess(`📄 Visual PDF Audit Report generated for ${startDate} to ${endDate}!`);
+      }
       setTimeout(() => setSuccess(''), 4000);
     } catch (err) {
       setError(err.message || 'Export failed');
-    } finally {
-      setExporting(false);
     }
   };
 
@@ -548,6 +766,10 @@ export const AdminDashboard = () => {
       }
     }
     if (selectedBranchFilter !== 'all') {
+      // Owner & Office Staff are central overseers, so exclude them when filtering by a specific branch
+      if (['owner', 'office_staff', 'admin'].includes(s.role)) {
+        return false;
+      }
       const bName = s.branches?.name || s.branch_name || s.branch || '';
       if (bName !== selectedBranchFilter && s.branch_id !== selectedBranchFilter) {
         return false;
@@ -576,7 +798,15 @@ export const AdminDashboard = () => {
       <Header />
 
       {showAddModal && <AddTemplateModal onSave={handleAddTemplate} onClose={() => setShowAddModal(false)} />}
-      {showAddMemberModal && <AddMemberModal onSave={handleAddMember} onClose={() => setShowAddMemberModal(false)} />}
+      {showAddMemberModal && <AddMemberModal branchesList={branchesList} onSave={handleAddMember} onClose={() => setShowAddMemberModal(false)} />}
+      {exportModalMode && (
+        <ExportRangeModal
+          mode={exportModalMode}
+          branchesList={branchesList}
+          onExport={handleRangeExport}
+          onClose={() => setExportModalMode(null)}
+        />
+      )}
 
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px 16px' }}>
 
@@ -623,8 +853,8 @@ export const AdminDashboard = () => {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
             <div style={{ minWidth: '220px', flex: 1 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', flexWrap: 'wrap' }}>
-                <span style={{ padding: '3px 10px', borderRadius: '20px', background: '#fef3c7', border: '1px solid #fde68a', color: '#b45309', fontSize: '11px', fontWeight: '800', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                  <Crown size={12} color="#d97706" /> {isOwner ? 'OWNER CONTROL CENTER' : 'MANAGER PANEL'}
+                <span style={{ padding: '3px 10px', borderRadius: '20px', background: isOwner ? '#fef3c7' : '#f5f3ff', border: `1px solid ${isOwner ? '#fde68a' : '#ddd6fe'}`, color: isOwner ? '#b45309' : '#6d28d9', fontSize: '11px', fontWeight: '800', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                  <Crown size={12} color={isOwner ? "#d97706" : "#7c3aed"} /> {isOwner ? 'OWNER CONTROL CENTER' : 'OFFICE CONTROL CENTER'}
                 </span>
                 <span style={{ color: '#94a3b8', fontSize: '12px', fontWeight: '500' }}>• {today}</span>
               </div>
@@ -657,6 +887,13 @@ export const AdminDashboard = () => {
                     background: '#ecfdf5', color: '#047857', cursor: exporting ? 'default' : 'pointer', fontSize: '12px', fontWeight: '800', whiteSpace: 'nowrap',
                   }}>
                     <FileSpreadsheet size={12} /> {exporting ? 'Exporting...' : 'Export CSV'}
+                  </button>
+                  <button onClick={handleExportPDF} style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
+                    padding: '9px 12px', borderRadius: '10px', border: '1px solid #ddd6fe',
+                    background: '#f5f3ff', color: '#6d28d9', cursor: 'pointer', fontSize: '12px', fontWeight: '800', whiteSpace: 'nowrap',
+                  }}>
+                    <FileText size={12} /> Export PDF
                   </button>
                 </div>
 
@@ -728,7 +965,7 @@ export const AdminDashboard = () => {
               </div>
 
               {/* Grid: Escalations + Staff Performance */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '24px' }}>
 
                 {/* Left: Open Escalations Panel */}
                 <div style={{
@@ -847,8 +1084,16 @@ export const AdminDashboard = () => {
                         };
                       });
                       return withStats
-                        .sort((a, b) => b.compliance_pct - a.compliance_pct)
-                        .map((s, i) => <StaffCard key={s.user_id || s.id} staff={s} rank={i + 1} onRoleChange={handleUpdateStaff} onDelete={handleDeleteStaff} />);
+                        .map((s, i) => (
+                          <StaffCard
+                            key={s.user_id || s.id}
+                            staff={s}
+                            rank={i + 1}
+                            branchesList={branchesList}
+                            onUpdateStaff={handleUpdateStaff}
+                            onDelete={handleDeleteStaff}
+                          />
+                        ));
                     })()}
                   </div>
                 )}
@@ -1031,7 +1276,8 @@ export const AdminDashboard = () => {
                     key={s.id || s.user_id}
                     staff={s}
                     rank={i + 1}
-                    onRoleChange={handleUpdateStaff}
+                    branchesList={branchesList}
+                    onUpdateStaff={handleUpdateStaff}
                     onDelete={handleDeleteStaff}
                   />
                 ))}

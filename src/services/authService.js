@@ -7,7 +7,7 @@ export const authService = {
   /**
    * Signs up a new user and creates auth + profile record with selected role & department
    */
-  async signUp({ email, password, name, role, branch_id = null }) {
+  async signUp({ email, password, name, role, branch_id = null, shift = 'day' }) {
     if (!isSupabaseConfigured()) {
       throw new Error('Supabase credentials are not configured. Please set up your .env file.');
     }
@@ -25,6 +25,7 @@ export const authService = {
           full_name: name,
           role,
           branch_id,
+          shift,
         },
       },
     });
@@ -33,9 +34,9 @@ export const authService = {
       throw new Error(this.getFriendlyAuthErrorMessage(error.message));
     }
 
-    // Immediately insert/upsert profile row with selected role and branch
+    // Immediately insert/upsert profile row with selected role, branch, and shift
     if (data.user) {
-      await this.createInitialProfile(data.user.id, email, { name, role, branch_id });
+      await this.createInitialProfile(data.user.id, email, { name, role, branch_id, shift });
     }
 
     return data;
@@ -99,6 +100,7 @@ export const authService = {
       name,
       email,
       role,
+      shift: metadata.shift || 'day',
       updated_at: new Date().toISOString(),
     };
     if (branch_id) profileData.branch_id = branch_id;

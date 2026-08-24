@@ -60,6 +60,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     role TEXT NOT NULL CHECK (role IN ('owner', 'office_staff', 'karigar', 'cashier', 'ground_staff', 'admin', 'user', 'removed')),
     department TEXT NOT NULL DEFAULT 'general' CHECK (department IN ('general', 'kitchen', 'cashier', 'inventory', 'hygiene', 'all')),
     branch_id UUID REFERENCES public.branches(id) ON DELETE SET NULL,
+    shift TEXT NOT NULL DEFAULT 'all' CHECK (shift IN ('day', 'night', 'all')),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -68,6 +69,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS role TEXT NOT NULL;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS department TEXT NOT NULL DEFAULT 'general';
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS branch_id UUID REFERENCES public.branches(id) ON DELETE SET NULL;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS shift TEXT NOT NULL DEFAULT 'all';
 ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS profiles_role_check;
 ALTER TABLE public.profiles ADD CONSTRAINT profiles_role_check CHECK (role IN ('owner', 'office_staff', 'karigar', 'cashier', 'ground_staff', 'admin', 'user', 'removed'));
 
@@ -82,6 +84,7 @@ CREATE TABLE IF NOT EXISTS public.task_templates (
     assigned_role TEXT NOT NULL DEFAULT 'karigar' CHECK (assigned_role IN ('karigar', 'cashier', 'office_staff', 'all')),
     verifier_role TEXT NOT NULL DEFAULT 'office_staff' CHECK (verifier_role IN ('office_staff', 'owner')),
     escalation_role TEXT NOT NULL DEFAULT 'owner',
+    shift TEXT NOT NULL DEFAULT 'all' CHECK (shift IN ('day', 'night', 'all')),
     requires_evidence BOOLEAN NOT NULL DEFAULT FALSE,
     deadline_time TEXT,  -- e.g. '10:00 AM'
     position INT NOT NULL DEFAULT 0,
@@ -90,6 +93,8 @@ CREATE TABLE IF NOT EXISTS public.task_templates (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE public.task_templates ADD COLUMN IF NOT EXISTS shift TEXT NOT NULL DEFAULT 'all';
 
 -- Assigned Tasks (Daily task instances generated from templates for each staff member)
 CREATE TABLE IF NOT EXISTS public.assigned_tasks (

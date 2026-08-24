@@ -36,6 +36,7 @@ export const verificationService = {
 
       if (!sopErr && sopTasks) {
         return sopTasks.filter(t => {
+          if (t.staff?.role === 'removed') return false;
           const ver = t.task_verifications?.[0];
           return !ver || ver.verification_status === 'follow_up';
         });
@@ -83,8 +84,61 @@ export const verificationService = {
     }));
 
     return merged.filter(t => {
+      if (t.staff?.role === 'removed') return false;
       const ver = t.task_verifications?.[0];
       return !ver || ver.verification_status === 'follow_up';
+    });
+  },
+
+  // ─── VERIFIED TASKS HISTORY ────────────────────────────────────────
+
+  async getVerifiedTasks({ date = null } = {}) {
+    const targetDate = date || new Date().toISOString().split('T')[0];
+
+    const { data: tasks, error } = await supabase
+      .from('assigned_tasks')
+      .select(`
+        id, status, submitted_at, completed_at, reason, action_required,
+        assigned_to,
+        staff:profiles!assigned_to (id, user_id, name, email, role),
+        task_templates (
+          id, title, description, frequency
+        ),
+        task_verifications!inner (
+          id, verification_status, follow_up_note, verified_at, verified_by
+        )
+      `)
+      .eq('assigned_date', targetDate);
+
+    if (error || !tasks) return [];
+    const validTasks = tasks.filter(t => t.staff?.role !== 'removed');
+
+    // Collect all verifier user_ids to resolve their profile names accurately
+    const verifierIds = [...new Set(validTasks.map(t => t.task_verifications?.[0]?.verified_by).filter(Boolean))];
+    let verifierMap = {};
+
+    if (verifierIds.length > 0) {
+      const { data: verProfiles } = await supabase
+        .from('profiles')
+        .select('user_id, name, role')
+        .in('user_id', verifierIds);
+
+      verifierMap = (verProfiles || []).reduce((acc, p) => {
+        acc[p.user_id] = p;
+        return acc;
+      }, {});
+    }
+
+    return validTasks.map(t => {
+      const ver = t.task_verifications?.[0];
+      const verifierProfile = ver?.verified_by ? verifierMap[ver.verified_by] : null;
+      return {
+        ...t,
+        task_verifications: ver ? [{
+          ...ver,
+          verifier: verifierProfile || { name: 'Office Staff', role: 'office_staff' },
+        }] : [],
+      };
     });
   },
 

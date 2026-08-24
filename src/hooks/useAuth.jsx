@@ -100,14 +100,14 @@ export const AuthProvider = ({ children }) => {
     return data;
   };
 
-  const signup = async (email, password, name, role, department = 'kitchen', branch_id = null) => {
+  const signup = async (email, password, name, role, department = 'kitchen', branch_id = null, shift = 'day') => {
     if (!role) {
       throw new Error('Role selection is mandatory. Please select a role.');
     }
-    const data = await authService.signUp({ email, password, name, role, department, branch_id });
+    const data = await authService.signUp({ email, password, name, role, department, branch_id, shift });
     if (data.user) {
       setUser(data.user);
-      await fetchUserProfile(data.user.id, data.user.email, { name, role, department, branch_id });
+      await fetchUserProfile(data.user.id, data.user.email, { name, role, department, branch_id, shift });
     }
     return data;
   };

@@ -135,8 +135,7 @@ export const sopService = {
     return results;
   },
 
-  async getAllStaffTasks({ date = null, frequency = 'daily', branchId = null } = {}) {
-    const targetDate = date || new Date().toISOString().split('T')[0];
+  async getAllStaffTasks({ date = null, startDate = null, endDate = null, frequency = 'daily', branchId = null } = {}) {
     let query = supabase
       .from('assigned_tasks')
       .select(`
@@ -147,24 +146,69 @@ export const sopService = {
           assigned_role, verifier_role, requires_evidence, deadline_time, position
         ),
         task_verifications (
-          id, verification_status, follow_up_note, verified_at,
-          verifier:verified_by (name, role)
+          id, verification_status, follow_up_note, verified_at, verified_by
         ),
         escalations (
           id, reason, is_resolved, created_at
         )
-      `)
-      .eq('assigned_date', targetDate);
+      `);
+
+    if (startDate && endDate) {
+      query = query.gte('assigned_date', startDate).lte('assigned_date', endDate);
+    } else if (date) {
+      query = query.eq('assigned_date', date);
+    } else {
+      const targetDate = new Date().toISOString().split('T')[0];
+      query = query.eq('assigned_date', targetDate);
+    }
 
     if (branchId) query = query.eq('branch_id', branchId);
 
     const { data, error } = await query.order('created_at', { ascending: true });
     if (error) throw error;
 
-    let results = data || [];
+    let results = (data || []).filter(at => at.staff?.role !== 'removed');
     if (frequency) {
       results = results.filter(at => at.task_templates?.frequency === frequency);
     }
+
+    // Always fetch task_verifications directly to ensure 100% reliable verification status & verifier profile names
+    const taskIds = results.map(t => t.id);
+    if (taskIds.length > 0) {
+      const { data: verifications } = await supabase
+        .from('task_verifications')
+        .select('id, assigned_task_id, verification_status, follow_up_note, verified_at, verified_by')
+        .in('assigned_task_id', taskIds);
+
+      if (verifications && verifications.length > 0) {
+        const verifierIds = [...new Set(verifications.map(v => v.verified_by).filter(Boolean))];
+        let verifierMap = {};
+        if (verifierIds.length > 0) {
+          const { data: verProfiles } = await supabase
+            .from('profiles')
+            .select('user_id, name, role')
+            .in('user_id', verifierIds);
+          verifierMap = (verProfiles || []).reduce((acc, p) => {
+            acc[p.user_id] = p;
+            return acc;
+          }, {});
+        }
+
+        const verByTaskId = verifications.reduce((acc, v) => {
+          acc[v.assigned_task_id] = {
+            ...v,
+            verifier: v.verified_by ? verifierMap[v.verified_by] : { name: 'Office Staff', role: 'office_staff' },
+          };
+          return acc;
+        }, {});
+
+        results = results.map(t => ({
+          ...t,
+          task_verifications: verByTaskId[t.id] ? [verByTaskId[t.id]] : (t.task_verifications || []),
+        }));
+      }
+    }
+
     return results;
   },
 
@@ -316,25 +360,29 @@ export const sopService = {
     return data;
   },
 
-  async createTeamMember({ name, email, password, role = 'karigar' }) {
+  async createTeamMember({ name, email, password, role = 'karigar', branch_id = null, shift = 'day' }) {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { name, role } },
+      options: { data: { name, role, branch_id, shift } },
     });
 
     if (error) throw error;
     const newUserId = data.user?.id;
     if (!newUserId) throw new Error('User creation failed');
 
+    const profileRecord = {
+      user_id: newUserId,
+      name,
+      email,
+      role,
+      shift: shift || 'day',
+    };
+    if (branch_id) profileRecord.branch_id = branch_id;
+
     const { data: profData, error: profErr } = await supabase
       .from('profiles')
-      .upsert({
-        user_id: newUserId,
-        name,
-        email,
-        role,
-      }, { onConflict: 'user_id' })
+      .upsert(profileRecord, { onConflict: 'user_id' })
       .select()
       .single();
 
@@ -377,9 +425,9 @@ export const sopService = {
     return { count: data?.length || 0 };
   },
 
-  async exportTasksToCSV() {
-    const tasks = await sopService.getAllStaffTasks();
-    if (!tasks || tasks.length === 0) throw new Error('No task records to export.');
+  async exportTasksToCSV({ startDate = null, endDate = null, branchId = null } = {}) {
+    const tasks = await sopService.getAllStaffTasks({ startDate, endDate, branchId, frequency: null });
+    if (!tasks || tasks.length === 0) throw new Error('No task records found for selected date range.');
 
     const headers = [
       'Task Title',
@@ -442,20 +490,20 @@ export const sopService = {
   async loadSampleSOPTemplates() {
     const samples = [
       // Kitchen SOPs (Karigar)
-      { title: 'Kitchen Opening & Gas Check', description: 'Inspect gas pipeline, water valves, exhaust switches, and surface hygiene.', frequency: 'daily', assigned_role: 'karigar', verifier_role: 'office_staff', deadline_time: '08:30 AM', position: 1 },
-      { title: 'Preheat Tandoor & Fryer Oil Quality', description: 'Preheat tandoor, check fryer oil TPM level and filter clarity.', frequency: 'daily', assigned_role: 'karigar', verifier_role: 'office_staff', deadline_time: '09:00 AM', position: 2 },
-      { title: 'Chutney & Sauce Preparation', description: 'Prepare fresh mint-coriander chutney, tamarind chutney, and garlic paste.', frequency: 'daily', assigned_role: 'karigar', verifier_role: 'office_staff', deadline_time: '09:30 AM', position: 3 },
-      { title: 'Dough Kneading & Marination Prep', description: 'Knead fresh naan dough and marinate paneer/tikka batches.', frequency: 'daily', assigned_role: 'karigar', verifier_role: 'office_staff', deadline_time: '10:00 AM', position: 4 },
-      { title: 'Refrigeration & Deep Freezer Temp Log', description: 'Log temperatures: Chiller (2°C-5°C) and Deep Freezer (-18°C).', frequency: 'daily', assigned_role: 'karigar', verifier_role: 'office_staff', deadline_time: '11:00 AM', position: 5 },
-      { title: 'Kitchen Exhaust & Hood Cleaning', description: 'Degrease exhaust hood filters and wipe stainless steel walls.', frequency: 'daily', assigned_role: 'karigar', verifier_role: 'office_staff', deadline_time: '04:00 PM', position: 6 },
-      { title: 'Night Kitchen Deep Clean & Gas Shutoff', description: 'Sanitize all cooking stations, turn off main gas valves and log waste.', frequency: 'daily', assigned_role: 'karigar', verifier_role: 'office_staff', deadline_time: '10:30 PM', position: 7 },
+      { title: 'Kitchen Opening & Gas Check', description: 'Inspect gas pipeline, water valves, exhaust switches, and surface hygiene.', frequency: 'daily', assigned_role: 'karigar', verifier_role: 'office_staff', deadline_time: '08:30 AM', position: 1, shift: 'day' },
+      { title: 'Preheat Tandoor & Fryer Oil Quality', description: 'Preheat tandoor, check fryer oil TPM level and filter clarity.', frequency: 'daily', assigned_role: 'karigar', verifier_role: 'office_staff', deadline_time: '09:00 AM', position: 2, shift: 'day' },
+      { title: 'Chutney & Sauce Preparation', description: 'Prepare fresh mint-coriander chutney, tamarind chutney, and garlic paste.', frequency: 'daily', assigned_role: 'karigar', verifier_role: 'office_staff', deadline_time: '09:30 AM', position: 3, shift: 'day' },
+      { title: 'Dough Kneading & Marination Prep', description: 'Knead fresh naan dough and marinate paneer/tikka batches.', frequency: 'daily', assigned_role: 'karigar', verifier_role: 'office_staff', deadline_time: '10:00 AM', position: 4, shift: 'day' },
+      { title: 'Refrigeration & Deep Freezer Temp Log', description: 'Log temperatures: Chiller (2°C-5°C) and Deep Freezer (-18°C).', frequency: 'daily', assigned_role: 'karigar', verifier_role: 'office_staff', deadline_time: '11:00 AM', position: 5, shift: 'all' },
+      { title: 'Kitchen Exhaust & Hood Cleaning', description: 'Degrease exhaust hood filters and wipe stainless steel walls.', frequency: 'daily', assigned_role: 'karigar', verifier_role: 'office_staff', deadline_time: '04:00 PM', position: 6, shift: 'night' },
+      { title: 'Night Kitchen Deep Clean & Gas Shutoff', description: 'Sanitize all cooking stations, turn off main gas valves and log waste.', frequency: 'daily', assigned_role: 'karigar', verifier_role: 'office_staff', deadline_time: '10:30 PM', position: 7, shift: 'night' },
 
       // Cashier & Counter SOPs
-      { title: 'Cash Counter Opening Float Count', description: 'Count physical opening float currency notes & sign opening register.', frequency: 'daily', assigned_role: 'cashier', verifier_role: 'office_staff', deadline_time: '09:00 AM', position: 1 },
-      { title: 'POS Printer & EDC Machine Test', description: 'Check thermal paper roll status, run test print & verify EDC network.', frequency: 'daily', assigned_role: 'cashier', verifier_role: 'office_staff', deadline_time: '09:15 AM', position: 2 },
-      { title: 'Mid-Day Sales & KOT Reconciliation', description: 'Verify digital QR payments, Zomato/Swiggy order logs & cash in drawer.', frequency: 'daily', assigned_role: 'cashier', verifier_role: 'office_staff', deadline_time: '03:00 PM', position: 3 },
-      { title: 'Bill Counter Sanitization & Menu Check', description: 'Disinfect bill counter, wipe touchscreens & verify physical menu cards.', frequency: 'daily', assigned_role: 'cashier', verifier_role: 'office_staff', deadline_time: '05:00 PM', position: 4 },
-      { title: 'Night Cash Closing & Office Handover', description: 'Generate Z-Report from POS, count final cash & deposit in safe box.', frequency: 'daily', assigned_role: 'cashier', verifier_role: 'office_staff', deadline_time: '10:15 PM', position: 5 },
+      { title: 'Cash Counter Opening Float Count', description: 'Count physical opening float currency notes & sign opening register.', frequency: 'daily', assigned_role: 'cashier', verifier_role: 'office_staff', deadline_time: '09:00 AM', position: 1, shift: 'day' },
+      { title: 'POS Printer & EDC Machine Test', description: 'Check thermal paper roll status, run test print & verify EDC network.', frequency: 'daily', assigned_role: 'cashier', verifier_role: 'office_staff', deadline_time: '09:15 AM', position: 2, shift: 'day' },
+      { title: 'Mid-Day Sales & KOT Reconciliation', description: 'Verify digital QR payments, Zomato/Swiggy order logs & cash in drawer.', frequency: 'daily', assigned_role: 'cashier', verifier_role: 'office_staff', deadline_time: '03:00 PM', position: 3, shift: 'day' },
+      { title: 'Bill Counter Sanitization & Menu Check', description: 'Disinfect bill counter, wipe touchscreens & verify physical menu cards.', frequency: 'daily', assigned_role: 'cashier', verifier_role: 'office_staff', deadline_time: '05:00 PM', position: 4, shift: 'night' },
+      { title: 'Night Cash Closing & Office Handover', description: 'Generate Z-Report from POS, count final cash & deposit in safe box.', frequency: 'daily', assigned_role: 'cashier', verifier_role: 'office_staff', deadline_time: '10:15 PM', position: 5, shift: 'night' },
     ];
     return await sopService.bulkCreateTemplates(samples);
   },

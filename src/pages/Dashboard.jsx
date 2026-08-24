@@ -403,8 +403,24 @@ export const Dashboard = () => {
             <div style={{ color: '#0f172a', fontSize: '24px', fontWeight: '900', letterSpacing: '-0.5px' }}>
               Welcome back, {profile?.name || user?.email?.split('@')[0]} 👋
             </div>
-            <div style={{ color: '#64748b', fontSize: '13px', marginTop: '2px' }}>
-              {todayLabel} · Role: <strong>{roleName}</strong>
+            <div style={{ color: '#64748b', fontSize: '13px', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <span>{todayLabel}</span>
+              <span>·</span>
+              <span>Role: <strong>{roleName}</strong></span>
+              {profile?.role !== 'owner' && (
+                <>
+                  <span>·</span>
+                  <span style={{
+                    padding: '3px 10px', borderRadius: '12px',
+                    background: profile?.shift === 'night' ? '#f5f3ff' : profile?.shift === 'day' ? '#fffbeb' : '#eff6ff',
+                    color: profile?.shift === 'night' ? '#6d28d9' : profile?.shift === 'day' ? '#b45309' : '#1d4ed8',
+                    border: `1px solid ${profile?.shift === 'night' ? '#ddd6fe' : profile?.shift === 'day' ? '#fde68a' : '#bfdbfe'}`,
+                    fontSize: '11px', fontWeight: '800', display: 'inline-flex', alignItems: 'center', gap: '4px',
+                  }}>
+                    {profile?.shift === 'night' ? '🌙 Night Shift' : profile?.shift === 'day' ? '☀️ Day Shift' : '🔄 All Shifts'}
+                  </span>
+                </>
+              )}
             </div>
           </div>
 
