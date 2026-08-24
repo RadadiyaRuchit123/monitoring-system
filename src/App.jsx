@@ -9,37 +9,37 @@ import { AdminDashboard } from './pages/AdminDashboard';
 import { VerificationPanel } from './pages/VerificationPanel';
 import { LoadingSpinner } from './components/LoadingState';
 
-// Protected Route Guard for logged-in users
+// Protected Route Guard for logged-in users with active profile
 const ProtectedRoute = ({ children }) => {
-  const { user, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
   if (loading) return <div style={{ minHeight: '100vh', background: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><LoadingSpinner label="Authenticating session..." /></div>;
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user || !profile || profile.role === 'removed') return <Navigate to="/login" replace />;
   return children;
 };
 
 // Admin Route Guard (Owner / Admin only)
 const AdminRoute = ({ children }) => {
-  const { user, isAdmin, loading } = useAuth();
+  const { user, profile, isAdmin, loading } = useAuth();
   if (loading) return <div style={{ minHeight: '100vh', background: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><LoadingSpinner label="Verifying admin credentials..." /></div>;
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user || !profile || profile.role === 'removed') return <Navigate to="/login" replace />;
   if (!isAdmin) return <Navigate to="/dashboard" replace />;
   return children;
 };
 
 // Office Staff Route Guard (ONLY Office Staff can access)
 const OfficeStaffRoute = ({ children }) => {
-  const { user, isOfficeStaff, loading } = useAuth();
+  const { user, profile, isOfficeStaff, loading } = useAuth();
   if (loading) return <div style={{ minHeight: '100vh', background: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><LoadingSpinner label="Verifying credentials..." /></div>;
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user || !profile || profile.role === 'removed') return <Navigate to="/login" replace />;
   if (!isOfficeStaff) return <Navigate to="/dashboard" replace />;
   return children;
 };
 
 // Public Route Guard (Redirects away from Login/Signup if already logged in)
 const PublicRoute = ({ children }) => {
-  const { user, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
   if (loading) return <div style={{ minHeight: '100vh', background: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><LoadingSpinner label="Checking session..." /></div>;
-  if (user) return <Navigate to="/dashboard" replace />;
+  if (user && profile && profile.role !== 'removed') return <Navigate to="/dashboard" replace />;
   return children;
 };
 

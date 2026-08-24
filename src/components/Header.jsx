@@ -32,11 +32,12 @@ export const Header = ({ onOpenProfileModal, onError }) => {
         💰 CASHIER
       </span>
     );
-    return (
+    if (isKarigar) return (
       <span style={{ padding: '3px 10px', background: '#ecfdf5', border: '1px solid #a7f3d0', color: '#065f46', fontSize: '10px', fontWeight: '800', borderRadius: '20px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
         🍳 KARIGAR
       </span>
     );
+    return null;
   };
 
   const getDeptLabel = () => {

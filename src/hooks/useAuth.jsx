@@ -33,17 +33,18 @@ export const AuthProvider = ({ children }) => {
     try {
       let userProfile = await authService.getProfile(userId);
 
-      // Block removed/deactivated staff members
-      if (userProfile && userProfile.role === 'removed') {
-        await authService.signOut();
+      // Block removed/deactivated staff members or missing profiles
+      if (!userProfile || userProfile.role === 'removed') {
+        try {
+          await authService.signOut();
+        } catch (e) {}
         setUser(null);
         setProfile(null);
+        try {
+          localStorage.clear();
+          sessionStorage.clear();
+        } catch (e) {}
         return;
-      }
-
-      // Self-healing fallback if trigger hasn't fired yet
-      if (!userProfile && userEmail) {
-        userProfile = await authService.createInitialProfile(userId, userEmail, userMetadata);
       }
 
       setProfile(userProfile);
@@ -150,7 +151,7 @@ export const AuthProvider = ({ children }) => {
 
   const value = {
     user,
-    profile: profile || (user ? { id: user.id, user_id: user.id, name: user.email?.split('@')[0], email: user.email, role: profile?.role || '', department: 'kitchen' } : null),
+    profile,
     loading,
     isOwner,
     isOfficeStaff,

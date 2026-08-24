@@ -353,7 +353,7 @@ export const Dashboard = () => {
   const eligible = stats.total - (stats.not_applicable || 0);
   const compliance = eligible === 0 ? 100 : Math.round((stats.completed / eligible) * 100);
 
-  const roleName = profile?.role === 'cashier' ? '💰 Cashier' : profile?.role === 'office_staff' ? '📋 Office Staff' : profile?.role === 'owner' ? '👑 Owner' : '🍳 Karigar';
+  const roleName = profile?.role === 'cashier' ? '💰 Cashier' : profile?.role === 'office_staff' ? '📋 Office Staff' : profile?.role === 'owner' ? '👑 Owner' : profile?.role === 'karigar' ? '🍳 Karigar' : (profile?.role || 'Staff');
 
   const FREQ_TABS = [
     { id: 'daily', label: 'Daily Tasks', icon: FaCalendarDays },
