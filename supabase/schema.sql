@@ -26,7 +26,8 @@ CREATE TABLE IF NOT EXISTS public.branches (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Ensure UNIQUE constraint on existing DB
+-- Ensure UNIQUE constraint on existing DB (cleanup duplicate sample rows first)
+DELETE FROM public.branches WHERE name = 'Main Branch';
 ALTER TABLE public.branches DROP CONSTRAINT IF EXISTS branches_name_key;
 ALTER TABLE public.branches ADD CONSTRAINT branches_name_key UNIQUE (name);
 
