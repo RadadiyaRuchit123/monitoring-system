@@ -99,7 +99,7 @@ export const Header = ({ onOpenProfileModal, onError }) => {
           </div>
 
           {/* Navigation Items */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto' }}>
             {/* My Checklist */}
             <button onClick={() => navigate('/dashboard')} style={navBtnStyle(isOnDash, '#0f172a', '#ffffff', '#ffffff', '#475569', '#e2e8f0')}>
               <FaClipboardList size={13} />
@@ -154,7 +154,7 @@ export const Header = ({ onOpenProfileModal, onError }) => {
                     />
                     <div style={{
                       position: 'absolute', right: 0, top: 'calc(100% + 8px)',
-                      width: '230px', background: '#ffffff', borderRadius: '16px',
+                      width: '230px', maxWidth: 'calc(100vw - 32px)', background: '#ffffff', borderRadius: '16px',
                       border: '1px solid #e2e8f0', boxShadow: '0 20px 40px rgba(0,0,0,0.12)',
                       zIndex: 50, overflow: 'hidden',
                     }}>
