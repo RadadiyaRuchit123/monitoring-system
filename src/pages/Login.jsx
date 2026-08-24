@@ -37,111 +37,268 @@ export const Login = () => {
 
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col justify-center p-4 sm:p-6 lg:p-8 overflow-x-hidden">
-      {/* Configuration Alert if .env missing */}
+    <div style={{
+      minHeight: '100vh', display: 'flex', flexDirection: 'column',
+      justifyContent: 'center', alignItems: 'center', padding: '24px 16px',
+      background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 35%, #312e81 65%, #1e1b4b 100%)',
+      position: 'relative', overflow: 'hidden',
+    }}>
+      {/* ── Animated gradient blobs ── */}
+      <div style={{
+        position: 'absolute', top: '-20%', left: '-10%', width: '500px', height: '500px',
+        borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,0.2) 0%, transparent 70%)',
+        animation: 'blob-move 18s ease-in-out infinite', pointerEvents: 'none',
+      }} />
+      <div style={{
+        position: 'absolute', bottom: '-15%', right: '-10%', width: '400px', height: '400px',
+        borderRadius: '50%', background: 'radial-gradient(circle, rgba(139,92,246,0.15) 0%, transparent 70%)',
+        animation: 'blob-move 22s ease-in-out infinite reverse', pointerEvents: 'none',
+      }} />
+      <div style={{
+        position: 'absolute', top: '40%', left: '50%', width: '300px', height: '300px',
+        borderRadius: '50%', background: 'radial-gradient(circle, rgba(59,130,246,0.08) 0%, transparent 60%)',
+        animation: 'blob-move 25s ease-in-out infinite', pointerEvents: 'none',
+        transform: 'translate(-50%, -50%)',
+      }} />
+
+      {/* ── Configuration Alert ── */}
       {!isConfigured && (
-        <div className="max-w-md mx-auto mb-6 px-4">
-          <div className="bg-amber-50 border border-amber-200 text-amber-900 p-4 rounded-2xl text-xs space-y-2">
-            <div className="flex items-center space-x-2 font-bold text-amber-800">
-              <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0" />
-              <span>Supabase Connection Required</span>
-            </div>
-            <p>
-              Please set your <code className="bg-amber-100 px-1 py-0.5 rounded">VITE_SUPABASE_URL</code> and{' '}
-              <code className="bg-amber-100 px-1 py-0.5 rounded">VITE_SUPABASE_ANON_KEY</code> in your{' '}
-              <code className="bg-amber-100 px-1 py-0.5 rounded">.env</code> file, and paste{' '}
-              <code className="bg-amber-100 px-1 py-0.5 rounded">supabase/schema.sql</code> into your Supabase SQL Editor.
-            </p>
+        <div style={{
+          maxWidth: '460px', width: '100%', marginBottom: '20px',
+          padding: '14px 18px', borderRadius: '16px',
+          background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.2)',
+          color: '#fbbf24', fontSize: '12px', zIndex: 1,
+          animation: 'fadeInDown 0.4s ease-out',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '700', marginBottom: '6px' }}>
+            <AlertCircle size={15} /> Supabase Connection Required
           </div>
+          <p style={{ margin: 0, lineHeight: 1.5, color: 'rgba(251,191,36,0.8)' }}>
+            Set <code style={{ background: 'rgba(255,255,255,0.08)', padding: '2px 6px', borderRadius: '4px' }}>VITE_SUPABASE_URL</code> and{' '}
+            <code style={{ background: 'rgba(255,255,255,0.08)', padding: '2px 6px', borderRadius: '4px' }}>VITE_SUPABASE_ANON_KEY</code> in your .env file.
+          </p>
         </div>
       )}
 
-      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-brand-600 to-brand-500 text-white shadow-lg shadow-brand-500/30 mb-4">
-          <CheckSquare className="w-8 h-8 stroke-[2.5]" />
+      {/* ── Brand Logo ── */}
+      <div style={{
+        textAlign: 'center', marginBottom: '28px', zIndex: 1,
+        animation: 'fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
+      }}>
+        <div style={{
+          width: '64px', height: '64px', borderRadius: '20px', margin: '0 auto 16px',
+          background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          boxShadow: '0 8px 32px rgba(99,102,241,0.4)',
+        }}>
+          <CheckSquare size={34} color="white" strokeWidth={2.5} />
         </div>
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Welcome Back</h2>
-        <p className="mt-2 text-sm text-slate-500">Sign in to manage your daily checklist and time logs</p>
+        <h1 style={{
+          fontSize: '28px', fontWeight: '900', color: '#f8fafc',
+          letterSpacing: '-0.5px', margin: '0 0 6px',
+        }}>
+          Welcome Back
+        </h1>
+        <p style={{ fontSize: '14px', color: 'rgba(148,163,184,0.8)', margin: 0, fontWeight: '500' }}>
+          Sign in to Iscon Gathiya SOP Management
+        </p>
       </div>
 
-      <div className="mt-6 sm:mt-8 w-full max-w-md mx-auto">
-        <div className="bg-white py-6 px-5 sm:py-8 sm:px-10 shadow-xl border border-slate-200/80 rounded-3xl">
-          {error && (
-            <div className="mb-6 p-3.5 bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold rounded-xl flex items-start space-x-2">
-              <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
-              <span>{error}</span>
-            </div>
-          )}
+      {/* ── Login Card (Glassmorphism) ── */}
+      <div style={{
+        width: '100%', maxWidth: '420px', zIndex: 1,
+        background: 'rgba(255,255,255,0.06)',
+        backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
+        border: '1px solid rgba(255,255,255,0.1)',
+        borderRadius: '24px', padding: '32px 28px',
+        boxShadow: '0 24px 64px rgba(0,0,0,0.3)',
+        animation: 'slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both',
+      }}>
+        {error && (
+          <div style={{
+            marginBottom: '20px', padding: '12px 14px', borderRadius: '12px',
+            background: 'rgba(244,63,94,0.1)', border: '1px solid rgba(244,63,94,0.2)',
+            color: '#fb7185', fontSize: '13px', fontWeight: '600',
+            display: 'flex', alignItems: 'flex-start', gap: '8px',
+            animation: 'fadeInDown 0.3s ease-out',
+          }}>
+            <AlertCircle size={16} style={{ flexShrink: 0, marginTop: '1px' }} />
+            <span>{error}</span>
+          </div>
+        )}
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label htmlFor="login-email" className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                Email Address
-              </label>
-              <div className="relative rounded-xl shadow-xs">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                  <Mail className="h-4 w-4 text-slate-400" />
-                </div>
-                <input
-                  id="login-email"
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@example.com"
-                  className="block w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all"
-                />
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+          {/* Email */}
+          <div>
+            <label htmlFor="login-email" style={{
+              display: 'block', fontSize: '11px', fontWeight: '700',
+              color: 'rgba(203,213,225,0.8)', textTransform: 'uppercase',
+              letterSpacing: '0.8px', marginBottom: '8px',
+            }}>
+              Email Address
+            </label>
+            <div style={{ position: 'relative' }}>
+              <div style={{
+                position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)',
+                color: 'rgba(148,163,184,0.5)', pointerEvents: 'none',
+              }}>
+                <Mail size={16} />
               </div>
+              <input
+                id="login-email"
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="name@example.com"
+                style={{
+                  width: '100%', padding: '12px 14px 12px 42px', borderRadius: '12px',
+                  background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
+                  color: '#f8fafc', fontSize: '14px', fontWeight: '500',
+                  outline: 'none', transition: 'all 0.2s', boxSizing: 'border-box',
+                }}
+                onFocus={e => {
+                  e.target.style.background = 'rgba(255,255,255,0.1)';
+                  e.target.style.borderColor = 'rgba(99,102,241,0.5)';
+                  e.target.style.boxShadow = '0 0 0 3px rgba(99,102,241,0.15)';
+                }}
+                onBlur={e => {
+                  e.target.style.background = 'rgba(255,255,255,0.06)';
+                  e.target.style.borderColor = 'rgba(255,255,255,0.1)';
+                  e.target.style.boxShadow = 'none';
+                }}
+              />
             </div>
+          </div>
 
-            <div>
-              <label htmlFor="login-password" className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                Password
-              </label>
-              <div className="relative rounded-xl shadow-xs">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                  <Lock className="h-4 w-4 text-slate-400" />
-                </div>
-                <input
-                  id="login-password"
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="block w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
+          {/* Password */}
+          <div>
+            <label htmlFor="login-password" style={{
+              display: 'block', fontSize: '11px', fontWeight: '700',
+              color: 'rgba(203,213,225,0.8)', textTransform: 'uppercase',
+              letterSpacing: '0.8px', marginBottom: '8px',
+            }}>
+              Password
+            </label>
+            <div style={{ position: 'relative' }}>
+              <div style={{
+                position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)',
+                color: 'rgba(148,163,184,0.5)', pointerEvents: 'none',
+              }}>
+                <Lock size={16} />
               </div>
-            </div>
-
-            <div>
+              <input
+                id="login-password"
+                type={showPassword ? 'text' : 'password'}
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                style={{
+                  width: '100%', padding: '12px 44px 12px 42px', borderRadius: '12px',
+                  background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
+                  color: '#f8fafc', fontSize: '14px', fontWeight: '500',
+                  outline: 'none', transition: 'all 0.2s', boxSizing: 'border-box',
+                }}
+                onFocus={e => {
+                  e.target.style.background = 'rgba(255,255,255,0.1)';
+                  e.target.style.borderColor = 'rgba(99,102,241,0.5)';
+                  e.target.style.boxShadow = '0 0 0 3px rgba(99,102,241,0.15)';
+                }}
+                onBlur={e => {
+                  e.target.style.background = 'rgba(255,255,255,0.06)';
+                  e.target.style.borderColor = 'rgba(255,255,255,0.1)';
+                  e.target.style.boxShadow = 'none';
+                }}
+              />
               <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-3 px-4 bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white text-sm font-bold rounded-xl shadow-md shadow-brand-500/25 transition-all focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:opacity-50"
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)',
+                  background: 'none', border: 'none', color: 'rgba(148,163,184,0.5)',
+                  cursor: 'pointer', padding: '2px', transition: 'color 0.15s',
+                }}
               >
-                {loading ? 'Signing in...' : 'Sign In'}
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
-          </form>
-
-          <div className="mt-6 pt-6 border-t border-slate-100 text-center">
-            <p className="text-xs text-slate-500">
-              Don't have an account yet?{' '}
-              <Link to="/signup" className="font-bold text-brand-600 hover:text-brand-700 hover:underline">
-                Create an account
-              </Link>
-            </p>
           </div>
+
+          {/* Submit */}
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              width: '100%', padding: '13px', borderRadius: '12px', border: 'none',
+              background: loading ? 'rgba(99,102,241,0.5)' : 'linear-gradient(135deg, #6366f1, #4f46e5)',
+              color: 'white', fontSize: '14px', fontWeight: '800',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              boxShadow: '0 4px 20px rgba(99,102,241,0.35)',
+              transition: 'all 0.2s', marginTop: '4px',
+              transform: 'translateY(0)',
+            }}
+            onMouseEnter={e => { if (!loading) e.currentTarget.style.transform = 'translateY(-1px)'; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; }}
+          >
+            {loading ? 'Signing in...' : 'Sign In'}
+          </button>
+        </form>
+
+        {/* Footer */}
+        <div style={{
+          marginTop: '24px', paddingTop: '20px',
+          borderTop: '1px solid rgba(255,255,255,0.06)', textAlign: 'center',
+        }}>
+          <p style={{ fontSize: '13px', color: 'rgba(148,163,184,0.6)', margin: 0 }}>
+            Don't have an account?{' '}
+            <Link to="/signup" style={{
+              color: '#818cf8', fontWeight: '700', textDecoration: 'none',
+              transition: 'color 0.15s',
+            }}>
+              Create an account
+            </Link>
+          </p>
         </div>
       </div>
+
+      {/* ── Powered By ── */}
+      <div style={{
+        marginTop: '32px', textAlign: 'center', zIndex: 1,
+        animation: 'fadeIn 0.5s ease-out 0.5s both',
+      }}>
+        <p style={{ fontSize: '11px', color: 'rgba(148,163,184,0.35)', margin: 0, fontWeight: '500' }}>
+          Powered by Iscon Gathiya Operations
+        </p>
+      </div>
+
+      {/* Keyframes (inline for self-contained component) */}
+      <style>{`
+        @keyframes blob-move {
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          25% { transform: translate(30px, -50px) scale(1.1); }
+          50% { transform: translate(-20px, 20px) scale(0.9); }
+          75% { transform: translate(20px, 50px) scale(1.05); }
+        }
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(16px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeInDown {
+          from { opacity: 0; transform: translateY(-12px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideUp {
+          from { opacity: 0; transform: translateY(24px) scale(0.98); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes pulse-soft { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+      `}</style>
     </div>
   );
 };
