@@ -99,7 +99,10 @@ export const AuthProvider = ({ children }) => {
     return data;
   };
 
-  const signup = async (email, password, name, role = 'office_staff', department = 'kitchen', branch_id = null) => {
+  const signup = async (email, password, name, role, department = 'kitchen', branch_id = null) => {
+    if (!role) {
+      throw new Error('Role selection is mandatory. Please select a role.');
+    }
     const data = await authService.signUp({ email, password, name, role, department, branch_id });
     if (data.user) {
       setUser(data.user);
@@ -133,7 +136,7 @@ export const AuthProvider = ({ children }) => {
     return updated;
   };
 
-  const role = profile?.role || 'office_staff';
+  const role = profile?.role || '';
   const isOwner = role === 'owner';
   const isOfficeStaff = role === 'office_staff';
   const isAdmin = role === 'admin' || isOwner;
@@ -147,7 +150,7 @@ export const AuthProvider = ({ children }) => {
 
   const value = {
     user,
-    profile: profile || (user ? { id: user.id, user_id: user.id, name: user.email?.split('@')[0], email: user.email, role: 'office_staff', department: 'kitchen' } : null),
+    profile: profile || (user ? { id: user.id, user_id: user.id, name: user.email?.split('@')[0], email: user.email, role: profile?.role || '', department: 'kitchen' } : null),
     loading,
     isOwner,
     isOfficeStaff,

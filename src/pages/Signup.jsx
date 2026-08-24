@@ -73,7 +73,7 @@ export const Signup = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [role, setRole] = useState('office_staff');
+  const [role, setRole] = useState('');
   const [branches, setBranches] = useState(RESTAURANT_BRANCHES);
   const [selectedBranch, setSelectedBranch] = useState(RESTAURANT_BRANCHES[0].id);
   const [showPassword, setShowPassword] = useState(false);
@@ -93,6 +93,10 @@ export const Signup = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!role) {
+      setError('Role selection is mandatory. Please select your restaurant role above.');
+      return;
+    }
     if (!name.trim()) {
       setError('Full name is required.');
       return;

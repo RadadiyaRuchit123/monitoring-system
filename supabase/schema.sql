@@ -52,7 +52,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE UNIQUE,
     name TEXT NOT NULL,
     email TEXT NOT NULL,
-    role TEXT NOT NULL DEFAULT 'office_staff' CHECK (role IN ('owner', 'office_staff', 'karigar', 'cashier', 'ground_staff', 'admin', 'user', 'removed')),
+    role TEXT NOT NULL CHECK (role IN ('owner', 'office_staff', 'karigar', 'cashier', 'ground_staff', 'admin', 'user', 'removed')),
     department TEXT NOT NULL DEFAULT 'general' CHECK (department IN ('general', 'kitchen', 'cashier', 'inventory', 'hygiene', 'all')),
     branch_id UUID REFERENCES public.branches(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -60,7 +60,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 );
 
 -- Add new columns & update role check constraint for existing DBs
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'office_staff';
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS role TEXT NOT NULL;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS department TEXT NOT NULL DEFAULT 'general';
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS branch_id UUID REFERENCES public.branches(id) ON DELETE SET NULL;
 ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS profiles_role_check;
@@ -688,7 +688,7 @@ SET search_path = public
 AS $$
 DECLARE
     v_full_name TEXT;
-    v_role TEXT := 'office_staff';
+    v_role TEXT;
     v_dept TEXT := 'general';
     v_branch_id UUID;
 BEGIN
@@ -698,10 +698,14 @@ BEGIN
         split_part(NEW.email, '@', 1)
     );
 
-    -- First ever user becomes Owner
+    v_role := NEW.raw_user_meta_data->>'role';
+
+    -- First ever user becomes Owner if no profiles exist
     IF NOT EXISTS (SELECT 1 FROM public.profiles) THEN
         v_role := 'owner';
         v_dept := 'all';
+    ELSIF v_role IS NULL OR v_role = '' THEN
+        RAISE EXCEPTION 'Role selection is mandatory for user creation.';
     END IF;
 
     -- Get default branch

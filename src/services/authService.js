@@ -7,9 +7,13 @@ export const authService = {
   /**
    * Signs up a new user and creates auth + profile record with selected role & department
    */
-  async signUp({ email, password, name, role = 'office_staff', branch_id = null }) {
+  async signUp({ email, password, name, role, branch_id = null }) {
     if (!isSupabaseConfigured()) {
       throw new Error('Supabase credentials are not configured. Please set up your .env file.');
+    }
+
+    if (!role) {
+      throw new Error('Role selection is mandatory. Please select a restaurant role.');
     }
 
     const { data, error } = await supabase.auth.signUp({
@@ -84,7 +88,10 @@ export const authService = {
     if (!isSupabaseConfigured() || !userId) return null;
 
     const name = metadata.name || metadata.full_name || email.split('@')[0];
-    const role = metadata.role || 'office_staff';
+    const role = metadata.role;
+    if (!role) {
+      throw new Error('Role selection is mandatory for profile creation.');
+    }
     const branch_id = metadata.branch_id || null;
 
     const profileData = {
