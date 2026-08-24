@@ -26,8 +26,24 @@ CREATE TABLE IF NOT EXISTS public.branches (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Insert a default branch
-INSERT INTO public.branches (name, location) VALUES ('Main Branch', 'Head Office')
+-- Insert default 16 branches
+INSERT INTO public.branches (name, location) VALUES
+  ('Himmatnagar', 'Himmatnagar'),
+  ('Sola Bridge', 'Sola Bridge'),
+  ('Bopal', 'Bopal'),
+  ('Mehsana', 'Mehsana'),
+  ('Statue of Unity', 'Statue of Unity'),
+  ('VS Hospital', 'VS Hospital'),
+  ('Fedra', 'Fedra'),
+  ('Bhadaj', 'Bhadaj'),
+  ('Food Mall', 'Food Mall'),
+  ('Gandhinagar', 'Gandhinagar'),
+  ('Changodar', 'Changodar'),
+  ('Vadodara', 'Vadodara'),
+  ('Adalaj', 'Adalaj'),
+  ('Makarba', 'Makarba'),
+  ('Chotila', 'Chotila'),
+  ('Bliss Resort (Mehsana)', 'Mehsana')
 ON CONFLICT DO NOTHING;
 
 -- Profiles Table (3-Tier: owner → office_staff → karigar/cashier)
