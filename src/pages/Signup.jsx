@@ -172,7 +172,7 @@ export const Signup = () => {
               <label style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: '#475569', textTransform: 'uppercase', marginBottom: '10px' }}>
                 SELECT YOUR RESTAURANT ROLE *
               </label>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '10px' }}>
                 {ROLES.map(r => {
                   const Icon = r.icon;
                   const isSelected = role === r.id;

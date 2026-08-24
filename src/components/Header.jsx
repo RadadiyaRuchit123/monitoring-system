@@ -67,7 +67,7 @@ export const Header = ({ onOpenProfileModal, onError }) => {
       boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
     }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '64px', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: '64px', padding: '8px 0', gap: '12px', flexWrap: 'wrap' }}>
 
           {/* Brand */}
           <div
