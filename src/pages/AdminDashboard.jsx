@@ -1,533 +1,26 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
-  Crown, TrendingUp, Users, CheckCircle2,
-  XCircle, AlertTriangle, Clock, RefreshCw,
-  ShieldAlert, Send, Plus, Trash2, X, BookOpen,
-  FileSpreadsheet, FileText, Trash, UserPlus, Zap,
+  Crown, Send, FileSpreadsheet, FileText, RefreshCw, Trash,
 } from 'lucide-react';
 import { Header } from '../components/Header';
-import { LoadingSpinner } from '../components/LoadingState';
 import { useAuth } from '../hooks/useAuth';
 import { ownerService } from '../services/ownerService';
 import { sopService } from '../services/sopService';
 import { exportService } from '../services/exportService';
 
-// ─── STYLING CONSTANTS ────────────────────────────────────────────────
-
-const ROLE_STYLES = {
-  owner: { bg: '#fffbeb', text: '#b45309', border: '#fde68a' },
-  office_staff: { bg: '#f5f3ff', text: '#6b21a8', border: '#ddd6fe' },
-  karigar: { bg: '#ecfdf5', text: '#047857', border: '#a7f3d0' },
-  cashier: { bg: '#eff6ff', text: '#1e40af', border: '#bfdbfe' },
-  ground_staff: { bg: '#f1f5f9', text: '#475569', border: '#cbd5e1' },
-};
-
-// ─── COMPLIANCE RING ──────────────────────────────────────────────────
-
-const ComplianceRing = ({ pct = 0, size = 110 }) => {
-  const strokeWidth = 10;
-  const radius = (size - strokeWidth) / 2;
-  const circum = 2 * Math.PI * radius;
-  const offset = circum - (pct / 100) * circum;
-  const color = pct >= 90 ? '#059669' : pct >= 75 ? '#d97706' : '#dc2626';
-  const label = pct >= 90 ? 'Excellent' : pct >= 75 ? 'Good' : 'Attention!';
-
-  return (
-    <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
-      <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
-        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="#f1f5f9" strokeWidth={strokeWidth} />
-        <circle
-          cx={size / 2} cy={size / 2} r={radius} fill="none"
-          stroke={color} strokeWidth={strokeWidth}
-          strokeDasharray={circum} strokeDashoffset={offset} strokeLinecap="round"
-          style={{ transition: 'stroke-dashoffset 0.6s ease' }}
-        />
-      </svg>
-      <div style={{
-        position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center', textAlign: 'center',
-      }}>
-        <span style={{ fontSize: '20px', fontWeight: '900', color: '#0f172a', lineHeight: 1 }}>{pct}%</span>
-        <span style={{ fontSize: '9px', fontWeight: '800', color, marginTop: '2px', textTransform: 'uppercase' }}>{label}</span>
-      </div>
-    </div>
-  );
-};
-
-// ─── MINI COMPLIANCE BAR ──────────────────────────────────────────────
-
-const ComplianceBar = ({ pct = 0, showLabel = true }) => {
-  const color = pct >= 90 ? '#059669' : pct >= 75 ? '#d97706' : '#dc2626';
-  return (
-    <div>
-      <div style={{ height: '6px', borderRadius: '3px', background: '#f1f5f9', overflow: 'hidden' }}>
-        <div style={{
-          height: '100%', borderRadius: '3px', width: `${Math.min(pct, 100)}%`,
-          background: color, transition: 'width 0.8s ease',
-        }} />
-      </div>
-      {showLabel && (
-        <div style={{ color, fontSize: '11px', fontWeight: '700', marginTop: '3px', textAlign: 'right' }}>{pct}%</div>
-      )}
-    </div>
-  );
-};
-
-// ─── STAT CARD ────────────────────────────────────────────────────────
-
-const StatCard = ({ icon: Icon, label, value, subtext, color, bg, border }) => (
-  <div style={{
-    background: bg, border: `1px solid ${border}`, borderRadius: '16px',
-    padding: '16px 18px', flex: 1, minWidth: '130px', boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
-  }}>
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-      <span style={{ fontSize: '11px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</span>
-      {Icon && <Icon size={16} color={color} />}
-    </div>
-    <div style={{ fontSize: '28px', fontWeight: '900', color, lineHeight: 1 }}>{value}</div>
-    {subtext && <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px', fontWeight: '500' }}>{subtext}</div>}
-  </div>
-);
-
-// ─── STAFF CARD ────────────────────────────────────────────────────────
-
-// ─── STAFF CARD ────────────────────────────────────────────────────────
-
-const StaffCard = ({ staff = {}, rank, branchesList = [], onUpdateStaff, onDelete }) => {
-  const pct = staff.compliance_pct || 0;
-  const color = pct >= 90 ? '#059669' : pct >= 75 ? '#d97706' : '#dc2626';
-  const roleSt = ROLE_STYLES[staff.role] || { bg: '#f1f5f9', text: '#475569', border: '#cbd5e1' };
-
-  return (
-    <div style={{
-      background: '#ffffff', border: '1px solid #e2e8f0',
-      borderRadius: '16px', padding: '14px 16px',
-      display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
-    }}>
-      {/* Rank & Avatar Group */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
-        <div style={{
-          width: '30px', height: '30px', borderRadius: '8px',
-          background: '#f8fafc', border: '1px solid #e2e8f0',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: '12px', fontWeight: '900', color: '#64748b', flexShrink: 0,
-        }}>
-          #{rank}
-        </div>
-
-        <div style={{
-          width: '38px', height: '38px', borderRadius: '12px',
-          background: roleSt.bg, border: `1px solid ${roleSt.border}`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: '15px', fontWeight: '900', color: roleSt.text, flexShrink: 0,
-          textTransform: 'uppercase',
-        }}>
-          {(staff.name || 'S').charAt(0)}
-        </div>
-      </div>
-
-      {/* Info */}
-      <div style={{ flex: '1 1 150px', minWidth: '130px' }}>
-        <div style={{ color: '#0f172a', fontWeight: '900', fontSize: '14px', wordBreak: 'break-word' }}>{staff.name || 'Staff Member'}</div>
-        <div style={{ color: '#64748b', fontSize: '11px', wordBreak: 'break-all' }}>{staff.email}</div>
-      </div>
-
-      {/* Interactive Controls Wrapper */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', flex: '1 1 280px' }}>
-        {/* Interactive Role Selector */}
-        <div style={{ flex: '1 1 120px' }}>
-          <div style={{ fontSize: '10px', color: '#64748b', fontWeight: '800', marginBottom: '2px', textTransform: 'uppercase' }}>ASSIGNED ROLE</div>
-          <select
-            value={staff.role || 'karigar'}
-            onChange={e => {
-              const newRole = e.target.value;
-              const updates = { role: newRole };
-              if (['office_staff', 'owner'].includes(newRole)) {
-                updates.branch_id = null;
-                updates.shift = 'all';
-              }
-              onUpdateStaff(staff.user_id || staff.id, updates);
-            }}
-            style={{
-              width: '100%', padding: '6px 10px', borderRadius: '10px', fontSize: '12px', fontWeight: '800',
-              background: roleSt.bg, color: roleSt.text, border: `1px solid ${roleSt.border}`,
-              cursor: 'pointer', outline: 'none', boxSizing: 'border-box',
-            }}
-          >
-            <option value="karigar">🍳 KARIGAR (CHEF)</option>
-            <option value="cashier">💰 CASHIER</option>
-            <option value="office_staff">📋 OFFICE STAFF</option>
-            <option value="owner">👑 OWNER</option>
-          </select>
-        </div>
-
-        {/* Interactive Branch Transfer & Shift Selector (Only for Karigar & Cashier) */}
-        {['karigar', 'cashier', 'ground_staff', 'user'].includes(staff.role) ? (
-          <>
-            <div style={{ flex: '1 1 130px' }}>
-              <div style={{ fontSize: '10px', color: '#64748b', fontWeight: '800', marginBottom: '2px', textTransform: 'uppercase' }}>📍 ASSIGNED BRANCH</div>
-              <select
-                value={staff.branch_id || ''}
-                onChange={e => onUpdateStaff(staff.user_id || staff.id, { branch_id: e.target.value || null })}
-                style={{
-                  width: '100%', padding: '6px 10px', borderRadius: '10px', fontSize: '12px', fontWeight: '700',
-                  background: '#f8fafc', color: '#0f172a', border: '1px solid #cbd5e1',
-                  cursor: 'pointer', outline: 'none', boxSizing: 'border-box',
-                }}
-              >
-                <option value="">-- Select Branch --</option>
-                {branchesList.map(b => (
-                  <option key={b.id} value={b.id}>{b.name}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Interactive Shift Change Selector */}
-            <div style={{ flex: '1 1 120px' }}>
-              <div style={{ fontSize: '10px', color: '#64748b', fontWeight: '800', marginBottom: '2px', textTransform: 'uppercase' }}>⏰ SHIFT</div>
-              <select
-                value={staff.shift || 'all'}
-                onChange={e => onUpdateStaff(staff.user_id || staff.id, { shift: e.target.value })}
-                style={{
-                  width: '100%', padding: '6px 10px', borderRadius: '10px', fontSize: '12px', fontWeight: '800',
-                  background: staff.shift === 'day' ? '#fffbeb' : staff.shift === 'night' ? '#f5f3ff' : '#eff6ff',
-                  color: staff.shift === 'day' ? '#b45309' : staff.shift === 'night' ? '#6d28d9' : '#1d4ed8',
-                  border: `1px solid ${staff.shift === 'day' ? '#fde68a' : staff.shift === 'night' ? '#ddd6fe' : '#bfdbfe'}`,
-                  cursor: 'pointer', outline: 'none', boxSizing: 'border-box',
-                }}
-              >
-                <option value="all">🔄 ALL SHIFTS</option>
-                <option value="day">☀️ DAY SHIFT</option>
-                <option value="night">🌙 NIGHT SHIFT</option>
-              </select>
-            </div>
-          </>
-        ) : (
-          <div style={{
-            padding: '6px 12px', borderRadius: '10px',
-            background: staff.role === 'owner' ? '#fef3c7' : '#f5f3ff',
-            border: `1px solid ${staff.role === 'owner' ? '#fde68a' : '#ddd6fe'}`,
-            color: staff.role === 'owner' ? '#b45309' : '#6d28d9',
-            fontSize: '11px', fontWeight: '800', whiteSpace: 'nowrap',
-          }}>
-            {staff.role === 'owner' ? '👑 ALL BRANCHES & SHIFTS OVERSEER' : '📋 CENTRAL OFFICE OVERSEER'}
-          </div>
-        )}
-      </div>
-
-      {/* Stats & Delete */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginLeft: 'auto', flexShrink: 0 }}>
-        {['karigar', 'cashier', 'ground_staff', 'user'].includes(staff.role) ? (
-          <div style={{ textAlign: 'right', flexShrink: 0, minWidth: '75px' }}>
-            <div style={{ fontSize: '16px', fontWeight: '900', color }}>{pct}%</div>
-            <div style={{ fontSize: '10px', color: '#64748b' }}>{staff.completed || 0}/{staff.eligible || 0} done</div>
-            <div style={{ width: '75px', marginTop: '3px' }}>
-              <ComplianceBar pct={pct} showLabel={false} />
-            </div>
-          </div>
-        ) : (
-          <div style={{ textAlign: 'right', flexShrink: 0 }}>
-            <span style={{ fontSize: '11px', fontWeight: '800', color: '#059669', background: '#ecfdf5', border: '1px solid #a7f3d0', padding: '4px 10px', borderRadius: '8px' }}>
-              FULL ACCESS
-            </span>
-          </div>
-        )}
-
-        {/* Delete Staff Member Button (Not allowed for Owner) */}
-        {onDelete && staff.role !== 'owner' && (
-          <button
-            onClick={() => onDelete(staff.id, staff.user_id, staff.name)}
-            style={{
-              padding: '8px 10px', borderRadius: '10px', border: '1px solid #fecaca',
-              background: '#fef2f2', color: '#b91c1c', cursor: 'pointer',
-              fontSize: '12px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px',
-            }}
-          >
-            <Trash size={12} />
-          </button>
-        )}
-      </div>
-    </div>
-  );
-};
-
-// ─── ADD MEMBER MODAL ────────────────────────────────────────────────
-
-const AddMemberModal = ({ branchesList = [], onSave, onClose }) => {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [role, setRole] = useState('karigar');
-  const [branchId, setBranchId] = useState(branchesList[0]?.id || '');
-  const [shift, setShift] = useState('day');
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!name.trim() || !email.trim() || !password) {
-      setError('Please fill all fields.');
-      return;
-    }
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters.');
-      return;
-    }
-    setSaving(true);
-    setError('');
-    try {
-      await onSave({ name: name.trim(), email: email.trim(), password, role, branch_id: branchId || null, shift });
-      onClose();
-    } catch (err) {
-      setError(err.message || 'Failed to create member');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const iStyle = {
-    width: '100%', padding: '10px 12px', borderRadius: '12px', background: '#f8fafc',
-    border: '1px solid #cbd5e1', color: '#0f172a', fontSize: '13px', outline: 'none', boxSizing: 'border-box',
-  };
-  const lStyle = { display: 'block', fontSize: '11px', fontWeight: '800', color: '#475569', marginBottom: '6px' };
-
-  return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(4px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-      <div style={{ background: '#ffffff', borderRadius: '24px', padding: '28px', width: '100%', maxWidth: '460px', border: '1px solid #e2e8f0', boxShadow: '0 25px 50px rgba(0,0,0,0.15)', maxHeight: '90vh', overflowY: 'auto' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <div style={{ color: '#0f172a', fontWeight: '900', fontSize: '18px' }}>➕ Add New Team Member</div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}><X size={18} /></button>
-        </div>
-
-        {error && <div style={{ padding: '10px 14px', borderRadius: '10px', background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', fontSize: '12px', marginBottom: '14px', fontWeight: '600' }}>{error}</div>}
-
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          <div>
-            <label style={lStyle}>SELECT ROLE *</label>
-            <select value={role} onChange={e => setRole(e.target.value)} style={iStyle}>
-              <option value="karigar">🍳 KARIGAR (CHEF)</option>
-              <option value="cashier">💰 CASHIER</option>
-              <option value="office_staff">📋 OFFICE STAFF</option>
-              <option value="owner">👑 OWNER</option>
-            </select>
-          </div>
-          <div>
-            <label style={lStyle}>FULL NAME *</label>
-            <input type="text" required value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Ramesh Chef" style={iStyle} />
-          </div>
-          <div>
-            <label style={lStyle}>EMAIL ADDRESS *</label>
-            <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="ramesh@restaurant.com" style={iStyle} />
-          </div>
-          <div>
-            <label style={lStyle}>PASSWORD *</label>
-            <input type="password" required value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" style={iStyle} />
-          </div>
-
-          {/* Branch Dropdown & Shift Selector (Only for Karigar & Cashier) */}
-          {['karigar', 'cashier'].includes(role) && (
-            <>
-              <div>
-                <label style={lStyle}>SELECT BRANCH (16 BRANCHES) *</label>
-                <select value={branchId} onChange={e => setBranchId(e.target.value)} style={iStyle}>
-                  {branchesList.map(b => (
-                    <option key={b.id} value={b.id}>{b.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label style={lStyle}>SELECT SHIFT *</label>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                  {[
-                    { id: 'day', label: '☀️ Day Shift', desc: 'Morning / Afternoon' },
-                    { id: 'night', label: '🌙 Night Shift', desc: 'Evening / Night Closing' },
-                  ].map(s => {
-                    const active = shift === s.id;
-                    return (
-                      <button
-                        key={s.id}
-                        type="button"
-                        onClick={() => setShift(s.id)}
-                        style={{
-                          padding: '10px 12px', borderRadius: '12px', textAlign: 'left',
-                          border: `2px solid ${active ? '#2563eb' : '#e2e8f0'}`,
-                          background: active ? '#eff6ff' : '#ffffff',
-                          cursor: 'pointer', transition: 'all 0.15s',
-                        }}
-                      >
-                        <div style={{ fontSize: '13px', fontWeight: '800', color: active ? '#2563eb' : '#0f172a' }}>{s.label}</div>
-                        <div style={{ fontSize: '10px', color: '#64748b', marginTop: '2px' }}>{s.desc}</div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </>
-          )}
-
-          <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '10px' }}>
-            <button type="button" onClick={onClose} style={{ padding: '10px 16px', borderRadius: '10px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#475569', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>Cancel</button>
-            <button type="submit" disabled={saving} style={{ padding: '10px 20px', borderRadius: '10px', border: 'none', background: 'linear-gradient(135deg, #2563eb, #7c3aed)', color: '#fff', cursor: 'pointer', fontSize: '13px', fontWeight: '700', boxShadow: '0 4px 12px rgba(37,99,235,0.3)' }}>
-              {saving ? 'Creating...' : 'Create Member'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
-
-// ─── ADD TEMPLATE MODAL ───────────────────────────────────────────────
-
-const AddTemplateModal = ({ onSave, onClose }) => {
-  const [form, setForm] = useState({
-    title: '', description: '',
-    frequency: 'daily', assigned_role: 'karigar', verifier_role: 'office_staff',
-    deadline_time: '10:00 AM', requires_evidence: false,
-  });
-  const [saving, setSaving] = useState(false);
-  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
-
-  const iStyle = { width: '100%', padding: '9px 12px', borderRadius: '10px', background: '#f8fafc', border: '1px solid #cbd5e1', color: '#0f172a', fontSize: '12px', outline: 'none' };
-  const lStyle = { display: 'block', fontSize: '11px', fontWeight: '800', color: '#475569', marginBottom: '4px' };
-
-  return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(4px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-      <div style={{ background: '#ffffff', borderRadius: '24px', padding: '28px', width: '100%', maxWidth: '520px', border: '1px solid #e2e8f0', boxShadow: '0 25px 50px rgba(0,0,0,0.15)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <div style={{ color: '#0f172a', fontWeight: '900', fontSize: '18px' }}>📋 Create SOP Template</div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}><X size={18} /></button>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <div><label style={lStyle}>TASK TITLE *</label><input value={form.title} onChange={e => set('title', e.target.value)} placeholder="e.g. Clean & Prep Chutneys" style={iStyle} /></div>
-          <div><label style={lStyle}>DESCRIPTION / INSTRUCTIONS</label><textarea value={form.description} onChange={e => set('description', e.target.value)} placeholder="Detailed step-by-step instructions..." rows={3} style={{ ...iStyle, resize: 'vertical' }} /></div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-            <div><label style={lStyle}>ASSIGNED ROLE *</label>
-              <select value={form.assigned_role} onChange={e => set('assigned_role', e.target.value)} style={iStyle}>
-                <option value="karigar">🍳 Karigar (Chef)</option>
-                <option value="cashier">💰 Cashier</option>
-                <option value="office_staff">📋 Office Staff</option>
-                <option value="all">👥 All Staff</option>
-              </select>
-            </div>
-            <div><label style={lStyle}>FREQUENCY</label>
-              <select value={form.frequency} onChange={e => set('frequency', e.target.value)} style={iStyle}>
-                <option value="daily">Daily</option>
-                <option value="weekly">Weekly</option>
-                <option value="monthly">Monthly</option>
-              </select>
-            </div>
-          </div>
-          <div><label style={lStyle}>DEADLINE TIME</label><input value={form.deadline_time} onChange={e => set('deadline_time', e.target.value)} placeholder="e.g. 10:00 AM" style={iStyle} /></div>
-        </div>
-        <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '24px' }}>
-          <button onClick={onClose} style={{ padding: '10px 18px', borderRadius: '10px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#475569', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>Cancel</button>
-          <button onClick={async () => { if (!form.title.trim()) return; setSaving(true); try { await onSave(form); onClose(); } finally { setSaving(false); } }} disabled={saving} style={{ padding: '10px 22px', borderRadius: '10px', border: 'none', background: 'linear-gradient(135deg, #2563eb, #7c3aed)', color: '#fff', cursor: 'pointer', fontSize: '13px', fontWeight: '700', boxShadow: '0 4px 12px rgba(37,99,235,0.3)' }}>
-            {saving ? 'Saving...' : 'Save Template'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// ─── EXPORT DATE RANGE MODAL ──────────────────────────────────────────
-
-const ExportRangeModal = ({ mode = 'csv', branchesList = [], onExport, onClose }) => {
-  const todayStr = new Date().toISOString().split('T')[0];
-  const past7Days = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-
-  const [startDate, setStartDate] = useState(past7Days);
-  const [endDate, setEndDate] = useState(todayStr);
-  const [branchId, setBranchId] = useState('all');
-  const [exporting, setExporting] = useState(false);
-  const [error, setError] = useState('');
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!startDate || !endDate) {
-      setError('Please select both Start Date and End Date.');
-      return;
-    }
-    setExporting(true);
-    setError('');
-    try {
-      await onExport({
-        mode,
-        startDate,
-        endDate,
-        branchId: branchId === 'all' ? null : branchId,
-      });
-      onClose();
-    } catch (err) {
-      setError(err.message || 'Export failed');
-    } finally {
-      setExporting(false);
-    }
-  };
-
-  const iStyle = { width: '100%', padding: '9px 12px', borderRadius: '10px', background: '#f8fafc', border: '1px solid #cbd5e1', color: '#0f172a', fontSize: '12px', outline: 'none', boxSizing: 'border-box' };
-  const lStyle = { display: 'block', fontSize: '11px', fontWeight: '800', color: '#475569', marginBottom: '4px' };
-
-  return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(4px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-      <div style={{ background: '#ffffff', borderRadius: '24px', padding: '24px', width: '100%', maxWidth: '420px', border: '1px solid #e2e8f0', boxShadow: '0 25px 50px rgba(0,0,0,0.15)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <div style={{ color: '#0f172a', fontWeight: '900', fontSize: '17px' }}>
-            {mode === 'csv' ? '📥 Export CSV Data' : '📄 Export PDF Audit Report'}
-          </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}><X size={18} /></button>
-        </div>
-
-        {error && <div style={{ padding: '10px 14px', borderRadius: '10px', background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', fontSize: '12px', marginBottom: '14px', fontWeight: '600' }}>{error}</div>}
-
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-            <div>
-              <label style={lStyle}>FROM DATE *</label>
-              <input type="date" required value={startDate} onChange={e => setStartDate(e.target.value)} style={iStyle} />
-            </div>
-            <div>
-              <label style={lStyle}>TO DATE *</label>
-              <input type="date" required value={endDate} onChange={e => setEndDate(e.target.value)} style={iStyle} />
-            </div>
-          </div>
-
-          <div>
-            <label style={lStyle}>FILTER BRANCH</label>
-            <select value={branchId} onChange={e => setBranchId(e.target.value)} style={iStyle}>
-              <option value="all">All Branches (16)</option>
-              {branchesList.map(b => (
-                <option key={b.id} value={b.id}>{b.name}</option>
-              ))}
-            </select>
-          </div>
-
-          <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '10px' }}>
-            <button type="button" onClick={onClose} style={{ padding: '9px 16px', borderRadius: '10px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#475569', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>Cancel</button>
-            <button type="submit" disabled={exporting} style={{ padding: '9px 18px', borderRadius: '10px', border: 'none', background: mode === 'csv' ? 'linear-gradient(135deg, #059669, #047857)' : 'linear-gradient(135deg, #7c3aed, #6d28d9)', color: '#fff', cursor: 'pointer', fontSize: '12px', fontWeight: '800' }}>
-              {exporting ? 'Processing...' : (mode === 'csv' ? '📥 Download CSV' : '📄 Generate PDF')}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
-
-// ─── MAIN OWNER DASHBOARD ──────────────────────────────────────────────
+import { ComplianceRing } from '../components/admin/AdminStatCards';
+import { ExportRangeModal, AddMemberModal, AddTemplateModal } from '../components/admin/AdminModals';
+import { ControlDashboardTab } from '../components/admin/ControlDashboardTab';
+import { SOPBuilderTab } from '../components/admin/SOPBuilderTab';
+import { TeamHierarchyTab } from '../components/admin/TeamHierarchyTab';
 
 export const AdminDashboard = () => {
-  const { isOwner, isOfficeStaff, profile } = useAuth();
+  const { isOwner, profile } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
 
   // Data state
   const [summary, setSummary] = useState({ overall: {}, staffStats: [], exceptions: [] });
   const [escalations, setEscalations] = useState([]);
-  const [weeklyTrend, setWeeklyTrend] = useState([]);
-  const [recentActivity, setRecentActivity] = useState([]);
   const [templates, setTemplates] = useState([]);
   const [staffList, setStaffList] = useState([]);
   const [branchesList, setBranchesList] = useState([]);
@@ -543,7 +36,6 @@ export const AdminDashboard = () => {
   const [loadingSample, setLoadingSample] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
-  const [exporting, setExporting] = useState(false);
   const [clearing, setClearing] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -557,17 +49,13 @@ export const AdminDashboard = () => {
     setError('');
     try {
       await sopService.syncTasksForToday('daily').catch(() => {});
-      const sum = await ownerService.getPerformanceSummary().catch(e => null);
-      const escs = await ownerService.getOpenEscalations().catch(e => []);
-      const trend = await ownerService.getWeeklyTrend().catch(e => []);
-      const activity = await ownerService.getRecentActivity(15).catch(e => []);
-      const staff = await ownerService.getAllStaff().catch(e => []);
-      const bList = await sopService.getBranches().catch(e => []);
+      const sum = await ownerService.getPerformanceSummary().catch(() => null);
+      const escs = await ownerService.getOpenEscalations().catch(() => []);
+      const staff = await ownerService.getAllStaff().catch(() => []);
+      const bList = await sopService.getBranches().catch(() => []);
 
       setSummary(sum || { overall: {}, staffStats: [], exceptions: [] });
       setEscalations(Array.isArray(escs) ? escs : []);
-      setWeeklyTrend(Array.isArray(trend) ? trend : []);
-      setRecentActivity(Array.isArray(activity) ? activity : []);
       setStaffList(Array.isArray(staff) ? staff : []);
       setBranchesList(Array.isArray(bList) ? bList : []);
     } catch (err) {
@@ -580,7 +68,7 @@ export const AdminDashboard = () => {
   const loadTemplates = useCallback(async () => {
     setLoadingTemplates(true);
     try {
-      const data = await sopService.getTemplates({ frequency }).catch(e => []);
+      const data = await sopService.getTemplates({ frequency }).catch(() => []);
       setTemplates(Array.isArray(data) ? data : []);
     } catch (err) {
       setError(err.message || 'Failed to load templates');
@@ -633,13 +121,8 @@ export const AdminDashboard = () => {
     finally { setLoadingSample(false); }
   };
 
-  const handleExportCSV = () => {
-    setExportModalMode('csv');
-  };
-
-  const handleExportPDF = () => {
-    setExportModalMode('pdf');
-  };
+  const handleExportCSV = () => { setExportModalMode('csv'); };
+  const handleExportPDF = () => { setExportModalMode('pdf'); };
 
   const handleRangeExport = async ({ mode, startDate, endDate, branchId }) => {
     setError('');
@@ -650,13 +133,7 @@ export const AdminDashboard = () => {
       } else {
         const tasks = await sopService.getAllStaffTasks({ startDate, endDate, branchId, frequency: null });
         exportService.exportPDFReport({
-          startDate,
-          endDate,
-          summary,
-          staffList,
-          tasks,
-          escalations,
-          branchesList,
+          startDate, endDate, summary, staffList, tasks, escalations, branchesList,
         });
         setSuccess(`📄 Visual PDF Audit Report generated for ${startDate} to ${endDate}!`);
       }
@@ -690,7 +167,7 @@ export const AdminDashboard = () => {
         return;
       }
       await sopService.updateStaffProfile(userId, updates);
-      const fresh = await ownerService.getAllStaff().catch(e => []);
+      const fresh = await ownerService.getAllStaff().catch(() => []);
       setStaffList(Array.isArray(fresh) ? fresh.filter(s => s.role !== 'removed') : []);
       setSuccess('Staff role updated!');
       await loadDashboard();
@@ -703,7 +180,7 @@ export const AdminDashboard = () => {
   const handleAddMember = async (memberData) => {
     try {
       const newProfile = await sopService.createTeamMember(memberData);
-      const fresh = await ownerService.getAllStaff().catch(e => []);
+      const fresh = await ownerService.getAllStaff().catch(() => []);
       setStaffList(Array.isArray(fresh) ? fresh.filter(s => s.role !== 'removed') : []);
       setSuccess(`✅ Created team member: ${newProfile.name}`);
       await loadDashboard();
@@ -716,7 +193,6 @@ export const AdminDashboard = () => {
   const handleDeleteStaff = async (profileId, userId, name) => {
     if (!confirm(`⚠️ Are you sure you want to remove ${name} from team?`)) return;
     try {
-      // Optimistically remove from state immediately
       setStaffList(prev => prev.filter(s => s.id !== profileId && s.user_id !== userId));
       setSummary(prev => ({
         ...prev,
@@ -724,7 +200,7 @@ export const AdminDashboard = () => {
       }));
 
       await sopService.deleteStaffProfile(profileId, userId);
-      const fresh = await ownerService.getAllStaff().catch(e => []);
+      const fresh = await ownerService.getAllStaff().catch(() => []);
       setStaffList(Array.isArray(fresh) ? fresh.filter(s => s.role !== 'removed') : []);
       setSuccess(`🗑️ Removed ${name} from team.`);
       await loadDashboard();
@@ -735,66 +211,34 @@ export const AdminDashboard = () => {
   };
 
   const handlePromoteToOwner = async () => {
-    if (!profile?.user_id) return;
     try {
-      await sopService.updateStaffProfile(profile.user_id, { role: 'owner' });
-      setSuccess('👑 Promoted your account to Owner! Reloading...');
-      setTimeout(() => window.location.reload(), 1000);
+      await ownerService.promoteToOwner();
+      setSuccess('👑 Account promoted to Owner!');
+      window.location.reload();
     } catch (err) {
-      setError(err.message || 'Failed to promote');
+      setError(err.message || 'Failed to promote account');
     }
   };
 
-  // ─── RENDER HELPERS ──────────────────────────────────────────────
-
-  const ROLE_PRIORITY = { owner: 1, admin: 1, office_staff: 2, karigar: 3, ground_staff: 3, cashier: 4, user: 5 };
+  // ─── COMPUTED DATA ───────────────────────────────────────────────
 
   const overall = summary?.overall || {};
-  const compliancePct = overall.compliancePct || 0;
+  const compliancePct = overall.compliance_pct !== undefined ? overall.compliance_pct : 0;
+  const safeStaffList = useMemo(() => (Array.isArray(staffList) ? staffList : []), [staffList]);
+  const safeTemplates = useMemo(() => (Array.isArray(templates) ? templates : []), [templates]);
+  const safeEscalations = useMemo(() => (Array.isArray(escalations) ? escalations : []), [escalations]);
 
-  const safeStaffList = Array.isArray(staffList)
-    ? staffList
-      .filter(s => s.role !== 'removed')
-      .sort((a, b) => {
-        const pA = ROLE_PRIORITY[a.role] || 99;
-        const pB = ROLE_PRIORITY[b.role] || 99;
-        if (pA !== pB) return pA - pB;
-        const timeA = new Date(a.created_at || 0).getTime();
-        const timeB = new Date(b.created_at || 0).getTime();
-        if (timeA !== timeB) return timeA - timeB;
-        return (a.name || '').localeCompare(b.name || '');
-      })
-    : [];
-
-  const filteredStaffList = safeStaffList.filter(s => {
-    if (selectedRoleFilter !== 'all') {
-      if (selectedRoleFilter === 'karigar') {
-        if (!['karigar', 'ground_staff', 'user'].includes(s.role)) return false;
-      } else if (s.role !== selectedRoleFilter) {
-        return false;
-      }
-    }
-    if (selectedBranchFilter !== 'all') {
-      // Owner & Office Staff are central overseers, so exclude them when filtering by a specific branch
-      if (['owner', 'office_staff', 'admin'].includes(s.role)) {
-        return false;
-      }
-      const bName = s.branches?.name || s.branch_name || s.branch || '';
-      if (bName !== selectedBranchFilter && s.branch_id !== selectedBranchFilter) {
-        return false;
-      }
-    }
-    return true;
-  });
-
-  const safeTemplates = Array.isArray(templates) ? templates : [];
-  const safeEscalations = Array.isArray(escalations) ? escalations : [];
-
-  const groundStaffStats = (summary?.staffStats || []).filter(s =>
+  const groundStaffStats = useMemo(() => (summary?.staffStats || []).filter(s =>
     ['karigar', 'cashier', 'ground_staff', 'user'].includes(s.role)
-  );
-  const criticalStaff = groundStaffStats.filter(s => s.compliance_pct < 75);
-  const openIssues = (overall.notCompleted || 0) + (overall.partial || 0);
+  ), [summary]);
+
+  const criticalStaff = useMemo(() => groundStaffStats.filter(s => s.compliance_pct < 75), [groundStaffStats]);
+
+  const filteredStaffList = useMemo(() => safeStaffList.filter(s => {
+    const matchesBranch = selectedBranchFilter === 'all' || s.branch_name === selectedBranchFilter || (branchesList.find(b => b.id === s.branch_id)?.name === selectedBranchFilter);
+    const matchesRole = selectedRoleFilter === 'all' || s.role === selectedRoleFilter || (selectedRoleFilter === 'karigar' && ['karigar', 'ground_staff', 'user'].includes(s.role));
+    return matchesBranch && matchesRole;
+  }), [safeStaffList, selectedBranchFilter, selectedRoleFilter, branchesList]);
 
   const TABS = [
     { id: 'dashboard', label: '📊 Control Dashboard', desc: 'Real-time performance' },
@@ -819,13 +263,13 @@ export const AdminDashboard = () => {
 
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px 16px' }}>
 
-        {/* PROMOTIONAL OWNER ALERT IF LOGGED IN ACCOUNT IS NOT OWNER YET */}
+        {/* PROMOTIONAL OWNER ALERT */}
         {profile?.role !== 'owner' && (
           <div style={{
             padding: '14px 20px', borderRadius: '16px', marginBottom: '20px',
             background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)',
             border: '1px solid #fde68a', display: 'flex', alignItems: 'center',
-            justify: 'space-between', gap: '16px', boxShadow: '0 4px 12px rgba(217,119,6,0.1)', flexWrap: 'wrap',
+            justifyContent: 'space-between', gap: '16px', boxShadow: '0 4px 12px rgba(217,119,6,0.1)', flexWrap: 'wrap',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <Crown size={20} color="#d97706" />
@@ -852,7 +296,7 @@ export const AdminDashboard = () => {
           </div>
         )}
 
-        {/* ══════════════════ HEADER BANNER (Clean Light) ══════════════════ */}
+        {/* ══════════════════ HEADER BANNER ══════════════════ */}
         <div style={{
           background: 'linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%)',
           borderRadius: '24px', padding: '18px 20px', marginBottom: '20px',
@@ -890,12 +334,12 @@ export const AdminDashboard = () => {
                     <Send size={12} />
                     {syncing ? 'Pushing...' : 'Push Tasks'}
                   </button>
-                  <button onClick={handleExportCSV} disabled={exporting} style={{
+                  <button onClick={handleExportCSV} style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
                     padding: '9px 12px', borderRadius: '10px', border: '1px solid #a7f3d0',
-                    background: '#ecfdf5', color: '#047857', cursor: exporting ? 'default' : 'pointer', fontSize: '12px', fontWeight: '800', whiteSpace: 'nowrap',
+                    background: '#ecfdf5', color: '#047857', cursor: 'pointer', fontSize: '12px', fontWeight: '800', whiteSpace: 'nowrap',
                   }}>
-                    <FileSpreadsheet size={12} /> {exporting ? 'Exporting...' : 'Export CSV'}
+                    <FileSpreadsheet size={12} /> Export CSV
                   </button>
                   <button onClick={handleExportPDF} style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
@@ -955,346 +399,49 @@ export const AdminDashboard = () => {
           })}
         </div>
 
-        {/* ══════════════════ TAB 1: CONTROL DASHBOARD ══════════════════ */}
+        {/* ══════════════════ TAB CONTENT ══════════════════ */}
         {activeTab === 'dashboard' && (
-          loading ? (
-            <div style={{ background: '#ffffff', borderRadius: '24px', border: '1px solid #e2e8f0' }}>
-              <LoadingSpinner label="Analyzing compliance data..." />
-            </div>
-          ) : (
-            <>
-              {/* KPI Cards Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px', marginBottom: '24px' }}>
-                <StatCard icon={BookOpen} label="Total SOPs Today" value={overall.total || 0} subtext={`${overall.completed || 0} completed`} color="#2563eb" bg="#eff6ff" border="#bfdbfe" />
-                <StatCard icon={CheckCircle2} label="Completed SOPs" value={overall.completed || 0} subtext={`${compliancePct}% compliance`} color="#059669" bg="#ecfdf5" border="#a7f3d0" />
-                <StatCard icon={Clock} label="Pending Submission" value={overall.pending || 0} subtext="Awaiting ground staff" color="#d97706" bg="#fffbeb" border="#fde68a" />
-                <StatCard icon={AlertTriangle} label="Partial / Delayed" value={overall.partial || 0} subtext="Reason recorded" color="#b45309" bg="#fef3c7" border="#fde68a" />
-                <StatCard icon={XCircle} label="Not Completed" value={overall.notCompleted || 0} subtext="Critical issues" color="#dc2626" bg="#fef2f2" border="#fecaca" />
-                <StatCard icon={ShieldAlert} label="Open Escalations" value={safeEscalations.length} subtext="Requires owner decision" color="#7c3aed" bg="#f5f3ff" border="#ddd6fe" />
-              </div>
-
-              {/* Grid: Escalations + Staff Performance */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '24px' }}>
-
-                {/* Left: Open Escalations Panel */}
-                <div style={{
-                  background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '20px', padding: '22px',
-                  boxShadow: '0 4px 16px rgba(0,0,0,0.03)', display: 'flex', flexDirection: 'column',
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <ShieldAlert size={16} color="#7c3aed" />
-                      <span style={{ fontSize: '15px', fontWeight: '900', color: '#0f172a' }}>Escalations Panel</span>
-                    </div>
-                    <span style={{ fontSize: '11px', fontWeight: '800', padding: '2px 8px', borderRadius: '12px', background: safeEscalations.length ? '#fef2f2' : '#ecfdf5', color: safeEscalations.length ? '#dc2626' : '#059669' }}>
-                      {safeEscalations.length} Open
-                    </span>
-                  </div>
-
-                  {safeEscalations.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '30px 10px', color: '#64748b', fontSize: '13px' }}>
-                      🎉 No unresolved escalations right now! All issues clear.
-                    </div>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                      {safeEscalations.map(esc => (
-                        <div key={esc.id} style={{
-                          padding: '14px', borderRadius: '14px', background: '#fef2f2', border: '1px solid #fecaca',
-                        }}>
-                          <div style={{ fontSize: '13px', fontWeight: '800', color: '#991b1b', marginBottom: '4px' }}>
-                            🚨 {esc.assigned_task?.task_templates?.title || 'SOP Task Issue'}
-                          </div>
-                          <div style={{ fontSize: '12px', color: '#7f1d1d', marginBottom: '6px' }}>
-                            <strong>Reason:</strong> {esc.reason}
-                          </div>
-                          <div style={{ fontSize: '11px', color: '#991b1b', display: 'flex', justifyContent: 'space-between' }}>
-                            <span>Staff: {esc.assigned_task?.staff?.name || 'Ground Staff'}</span>
-                            <span>{new Date(esc.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Right: Staff Leaderboard */}
-                <div style={{
-                  background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '20px', padding: '22px',
-                  boxShadow: '0 4px 16px rgba(0,0,0,0.03)', display: 'flex', flexDirection: 'column',
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <Users size={16} color="#2563eb" />
-                      <span style={{ fontSize: '15px', fontWeight: '900', color: '#0f172a' }}>Staff Leaderboard</span>
-                    </div>
-                    <span style={{ fontSize: '11px', color: '#64748b', fontWeight: '600' }}>Sorted by %</span>
-                  </div>
-
-                  {groundStaffStats.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '30px 10px', color: '#64748b', fontSize: '13px' }}>
-                      No ground staff task entries today yet. Click "Push Tasks".
-                    </div>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      {groundStaffStats.map(s => {
-                        const cColor = s.compliance_pct >= 90 ? '#059669' : s.compliance_pct >= 75 ? '#d97706' : '#dc2626';
-                        return (
-                          <div key={s.user_id} style={{
-                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                            padding: '10px 14px', borderRadius: '12px', background: '#f8fafc', border: '1px solid #e2e8f0',
-                          }}>
-                            <div>
-                              <div style={{ fontWeight: '800', fontSize: '13px', color: '#0f172a' }}>{s.name}</div>
-                              <div style={{ fontSize: '11px', color: '#64748b', textTransform: 'capitalize' }}>
-                                {s.role?.replace('_', ' ')} • {s.completed}/{s.total} done
-                              </div>
-                            </div>
-                            <div style={{ textAlign: 'right' }}>
-                              <div style={{ fontSize: '16px', fontWeight: '900', color: cColor }}>{s.compliance_pct}%</div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Bottom: Staff List with Role Management */}
-              <div style={{
-                background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '20px', padding: '22px',
-                boxShadow: '0 4px 16px rgba(0,0,0,0.03)', marginBottom: '24px',
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Users size={16} color="#2563eb" />
-                    <span style={{ fontSize: '15px', fontWeight: '900', color: '#0f172a' }}>Team Compliance & Roles</span>
-                  </div>
-                  {criticalStaff.length > 0 && (
-                    <span style={{ fontSize: '11px', fontWeight: '800', padding: '3px 10px', borderRadius: '12px', background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca' }}>
-                      ⚠️ {criticalStaff.length} below 75%
-                    </span>
-                  )}
-                </div>
-
-                {safeStaffList.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '30px 10px', color: '#64748b', fontSize: '13px' }}>
-                    No staff profiles registered yet.
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    {(() => {
-                      const withStats = safeStaffList.map(s => {
-                        const stats = (summary?.staffStats || []).find(gs => gs.user_id === s.user_id || gs.user_id === s.id);
-                        return {
-                          ...s,
-                          total: stats?.total || 0,
-                          completed: stats?.completed || 0,
-                          eligible: stats?.eligible || 0,
-                          compliance_pct: stats ? stats.compliance_pct : 0,
-                        };
-                      });
-                      return withStats
-                        .map((s, i) => (
-                          <StaffCard
-                            key={s.user_id || s.id}
-                            staff={s}
-                            rank={i + 1}
-                            branchesList={branchesList}
-                            onUpdateStaff={handleUpdateStaff}
-                            onDelete={handleDeleteStaff}
-                          />
-                        ));
-                    })()}
-                  </div>
-                )}
-              </div>
-            </>
-          )
+          <ControlDashboardTab
+            loading={loading}
+            overall={overall}
+            compliancePct={compliancePct}
+            safeEscalations={safeEscalations}
+            groundStaffStats={groundStaffStats}
+            safeStaffList={safeStaffList}
+            criticalStaff={criticalStaff}
+            summary={summary}
+            branchesList={branchesList}
+            handleUpdateStaff={handleUpdateStaff}
+            handleDeleteStaff={handleDeleteStaff}
+          />
         )}
 
-        {/* ══════════════════ TAB 2: SOP BUILDER ══════════════════ */}
         {activeTab === 'sop' && (
-          <>
-            <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
-              <div style={{ display: 'flex', background: '#ffffff', borderRadius: '10px', padding: '3px', border: '1px solid #cbd5e1', gap: '3px' }}>
-                {['daily', 'weekly', 'monthly'].map(f => (
-                  <button key={f} onClick={() => setFrequency(f)} style={{
-                    padding: '6px 14px', borderRadius: '7px', border: 'none',
-                    background: frequency === f ? '#eff6ff' : 'transparent',
-                    color: frequency === f ? '#2563eb' : '#64748b',
-                    cursor: 'pointer', fontSize: '12px', fontWeight: frequency === f ? '800' : '600', textTransform: 'capitalize',
-                  }}>{f}</button>
-                ))}
-              </div>
-
-              <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
-                <button onClick={handleLoadSamples} disabled={loadingSample} style={{
-                  display: 'flex', alignItems: 'center', gap: '6px',
-                  padding: '9px 14px', borderRadius: '10px', border: '1px solid #fde68a',
-                  background: '#fffbeb', color: '#b45309',
-                  cursor: loadingSample ? 'default' : 'pointer', fontSize: '12px', fontWeight: '800',
-                }}>
-                  <Zap size={13} /> {loadingSample ? 'Loading...' : '⚡ Load Master SOPs'}
-                </button>
-                <button onClick={() => setShowAddModal(true)} style={{
-                  display: 'flex', alignItems: 'center', gap: '6px',
-                  padding: '9px 16px', borderRadius: '10px', border: 'none',
-                  background: 'linear-gradient(135deg, #2563eb, #7c3aed)',
-                  color: '#fff', cursor: 'pointer', fontSize: '12px', fontWeight: '800',
-                  boxShadow: '0 4px 12px rgba(37,99,235,0.25)',
-                }}>
-                  <Plus size={14} /> New Template
-                </button>
-              </div>
-            </div>
-
-            {loadingTemplates ? (
-              <div style={{ display: 'flex', justifyContent: 'center', padding: '40px' }}>
-                <LoadingSpinner label="Loading templates..." />
-              </div>
-            ) : safeTemplates.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '60px 20px', background: '#ffffff', borderRadius: '20px', border: '1px dashed #cbd5e1' }}>
-                <div style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a', marginBottom: '6px' }}>No SOP templates created yet</div>
-                <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '16px' }}>Click "Load Master SOPs" to generate standard restaurant checklists</div>
-                <button onClick={handleLoadSamples} style={{ padding: '10px 20px', borderRadius: '12px', border: 'none', background: '#2563eb', color: '#fff', fontWeight: '800', cursor: 'pointer' }}>
-                  ⚡ Load Master Restaurant SOPs
-                </button>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {safeTemplates.map(t => (
-                  <div key={t.id} style={{
-                    background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '16px 20px',
-                    display: 'flex', alignItems: 'center', gap: '14px',
-                  }}>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ color: '#0f172a', fontWeight: '800', fontSize: '14px', marginBottom: '2px' }}>{t.title}</div>
-                      {t.description && <div style={{ color: '#64748b', fontSize: '12px', marginBottom: '4px' }}>{t.description}</div>}
-                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', fontSize: '11px', color: '#64748b' }}>
-                        <span style={{ textTransform: 'capitalize', fontWeight: '800', color: '#2563eb' }}>
-                          Assigned: {t.assigned_role?.replace('_', ' ')}
-                        </span>
-                        {t.deadline_time && <><span>·</span><span>📅 Due: {t.deadline_time}</span></>}
-                      </div>
-                    </div>
-                    <button onClick={() => handleDeleteTemplate(t.id)} style={{ padding: '8px', borderRadius: '8px', border: '1px solid #fecaca', background: '#fef2f2', color: '#b91c1c', cursor: 'pointer' }}>
-                      <Trash2 size={13} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </>
+          <SOPBuilderTab
+            frequency={frequency}
+            setFrequency={setFrequency}
+            loadingSample={loadingSample}
+            handleLoadSamples={handleLoadSamples}
+            setShowAddModal={setShowAddModal}
+            loadingTemplates={loadingTemplates}
+            safeTemplates={safeTemplates}
+            handleDeleteTemplate={handleDeleteTemplate}
+          />
         )}
 
-        {/* ══════════════════ TAB 3: TEAM HIERARCHY ══════════════════ */}
         {activeTab === 'team' && (
-          <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <div style={{ fontSize: '16px', fontWeight: '900', color: '#0f172a' }}>
-                Restaurant Staff & Team Roles ({safeStaffList.length})
-              </div>
-              <button onClick={() => setShowAddMemberModal(true)} style={{
-                display: 'flex', alignItems: 'center', gap: '7px',
-                padding: '10px 18px', borderRadius: '12px', border: 'none',
-                background: 'linear-gradient(135deg, #2563eb, #7c3aed)', color: '#ffffff',
-                cursor: 'pointer', fontSize: '13px', fontWeight: '800',
-                boxShadow: '0 4px 14px rgba(37,99,235,0.25)',
-              }}>
-                <UserPlus size={14} /> ➕ Add Team Member
-              </button>
-            </div>
-
-            {/* Summary Count Row */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px', marginBottom: '16px' }}>
-              {[
-                { label: 'Owner', value: safeStaffList.filter(s => s.role === 'owner').length, color: '#b45309', bg: '#fffbeb', border: '#fde68a' },
-                { label: 'Office Staff', value: safeStaffList.filter(s => s.role === 'office_staff').length, color: '#6b21a8', bg: '#f5f3ff', border: '#ddd6fe' },
-                { label: 'Karigar (Chef)', value: safeStaffList.filter(s => ['karigar', 'ground_staff', 'user'].includes(s.role)).length, color: '#047857', bg: '#ecfdf5', border: '#a7f3d0' },
-                { label: 'Cashier', value: safeStaffList.filter(s => s.role === 'cashier').length, color: '#1e40af', bg: '#eff6ff', border: '#bfdbfe' },
-              ].map(s => (
-                <div key={s.label} style={{ padding: '14px', borderRadius: '14px', textAlign: 'center', background: s.bg, border: `1px solid ${s.border}` }}>
-                  <div style={{ fontSize: '26px', fontWeight: '900', color: s.color }}>{s.value}</div>
-                  <div style={{ fontSize: '11px', color: s.color, fontWeight: '700' }}>{s.label}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* Filter Bar: Branch & Role */}
-            <div style={{
-              display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center',
-              justifyContent: 'space-between', marginBottom: '16px',
-              background: '#ffffff', padding: '12px 18px', borderRadius: '16px',
-              border: '1px solid #e2e8f0', boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
-            }}>
-              {/* Branch Filter Dropdown */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '12px', fontWeight: '800', color: '#475569' }}>📍 Filter Branch:</span>
-                <select
-                  value={selectedBranchFilter}
-                  onChange={e => setSelectedBranchFilter(e.target.value)}
-                  style={{
-                    padding: '6px 12px', borderRadius: '10px', border: '1px solid #cbd5e1',
-                    background: '#f8fafc', fontSize: '12px', fontWeight: '700', color: '#0f172a',
-                    outline: 'none', cursor: 'pointer',
-                  }}
-                >
-                  <option value="all">All Branches ({branchesList.length || 16})</option>
-                  {branchesList.map(b => (
-                    <option key={b.id || b.name} value={b.name}>{b.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Role Filter Buttons */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                <span style={{ fontSize: '12px', fontWeight: '800', color: '#475569', marginRight: '4px' }}>👤 Role:</span>
-                {[
-                  { id: 'all', label: 'All Roles' },
-                  { id: 'owner', label: '👑 Owner' },
-                  { id: 'office_staff', label: '👤 Office Staff' },
-                  { id: 'karigar', label: '🍳 Karigar' },
-                  { id: 'cashier', label: '💰 Cashier' },
-                ].map(rf => (
-                  <button
-                    key={rf.id}
-                    onClick={() => setSelectedRoleFilter(rf.id)}
-                    style={{
-                      padding: '5px 12px', borderRadius: '8px', border: '1px solid',
-                      borderColor: selectedRoleFilter === rf.id ? '#2563eb' : '#e2e8f0',
-                      background: selectedRoleFilter === rf.id ? '#eff6ff' : '#ffffff',
-                      color: selectedRoleFilter === rf.id ? '#2563eb' : '#64748b',
-                      fontSize: '12px', fontWeight: selectedRoleFilter === rf.id ? '800' : '600',
-                      cursor: 'pointer', transition: 'all 0.15s',
-                    }}
-                  >
-                    {rf.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Staff List */}
-            {filteredStaffList.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '40px 20px', background: '#ffffff', borderRadius: '16px', border: '1px dashed #cbd5e1', color: '#64748b', fontSize: '13px' }}>
-                No team members found matching the selected filters.
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {filteredStaffList.map((s, i) => (
-                  <StaffCard
-                    key={s.id || s.user_id}
-                    staff={s}
-                    rank={i + 1}
-                    branchesList={branchesList}
-                    onUpdateStaff={handleUpdateStaff}
-                    onDelete={handleDeleteStaff}
-                  />
-                ))}
-              </div>
-            )}
-          </>
+          <TeamHierarchyTab
+            safeStaffList={safeStaffList}
+            setShowAddMemberModal={setShowAddMemberModal}
+            selectedBranchFilter={selectedBranchFilter}
+            setSelectedBranchFilter={setSelectedBranchFilter}
+            branchesList={branchesList}
+            selectedRoleFilter={selectedRoleFilter}
+            setSelectedRoleFilter={setSelectedRoleFilter}
+            filteredStaffList={filteredStaffList}
+            handleUpdateStaff={handleUpdateStaff}
+            handleDeleteStaff={handleDeleteStaff}
+          />
         )}
       </div>
 
